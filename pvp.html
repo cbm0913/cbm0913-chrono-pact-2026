@@ -1,0 +1,2996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>时之契 · 好友约战</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #070a12;
+    --panel: rgba(15, 23, 42, .82);
+    --line: rgba(148, 163, 184, .17);
+    --text: #e8eefc;
+    --muted: #8b9ab3;
+    --pink: #f472b6;
+    --cyan: #67e8f9;
+    --gold: #fbbf24;
+    --red: #fb7185;
+    --green: #4ade80;
+    --violet: #c084fc;
+    --blue: #60a5fa;
+    --white: #e2e8f0;
+    --black: #94a3b8;
+    --shadow: 0 24px 70px rgba(0, 0, 0, .44);
+  }
+  html { color-scheme: dark; }
+  body {
+    min-height: 100vh;
+    padding: 24px 16px 44px;
+    color: var(--text);
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    background:
+      radial-gradient(circle at 12% -8%, rgba(244, 114, 182, .16), transparent 38%),
+      radial-gradient(circle at 88% 0%, rgba(96, 165, 250, .13), transparent 34%),
+      radial-gradient(circle at 50% 100%, rgba(192, 132, 252, .10), transparent 42%),
+      linear-gradient(180deg, #070a12 0%, #0b1020 54%, #080b14 100%);
+    background-attachment: fixed;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .20;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, .10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, .10) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(circle at 50% 35%, #000 0%, transparent 78%);
+    mask-image: radial-gradient(circle at 50% 35%, #000 0%, transparent 78%);
+  }
+  .app { position: relative; z-index: 1; width: min(1180px, 100%); margin: 0 auto; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); }
+
+  .hero { text-align: center; margin-bottom: 20px; }
+  .hero .kicker {
+    color: var(--pink);
+    font-size: 10px;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 4.2vw, 42px);
+    letter-spacing: .07em;
+    line-height: 1.15;
+    background: linear-gradient(100deg, #fff 5%, #f9a8d4 48%, #a5f3fc 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 18px rgba(244, 114, 182, .23));
+  }
+  .hero .subtitle { color: var(--muted); font-size: 13px; margin-top: 8px; letter-spacing: .03em; }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(17, 24, 39, .94), rgba(9, 14, 25, .94));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+  .setup-panel { padding: 22px; }
+  .setup-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+  .setup-head h2 { font-size: 18px; letter-spacing: .02em; }
+  .setup-head p { font-size: 12px; line-height: 1.6; margin-top: 4px; }
+  .deck-total-box { text-align: right; flex: 0 0 auto; }
+  .deck-total-box span { font-size: 32px; font-weight: 800; line-height: 1; color: var(--pink); font-variant-numeric: tabular-nums; }
+  .deck-total-box span.bad { color: var(--red); }
+  .deck-total-box small { color: var(--muted); font-size: 10px; }
+  #deckNeed { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+  .setup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .btn {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 9px 15px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: transform .15s, opacity .15s, background .15s, border-color .15s;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: .36; cursor: not-allowed; }
+  .btn.primary {
+    background: linear-gradient(135deg, #db2777, #be185d);
+    box-shadow: 0 8px 24px rgba(190, 24, 93, .26);
+  }
+  .btn.danger {
+    background: linear-gradient(135deg, #e11d48, #9f1239);
+    box-shadow: 0 8px 24px rgba(225, 29, 72, .20);
+  }
+  .btn.ghost { background: rgba(255, 255, 255, .055); border-color: var(--line); color: #dbe4f4; }
+  .btn.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .09); }
+  .btn, .card, .life-card, .pvp-copy, .deck-counter button { touch-action: manipulation; }
+
+  .deck-hint {
+    margin: 10px 0 8px;
+    padding: 8px 10px;
+    border: 1px dashed rgba(251, 191, 36, .18);
+    border-radius: 8px;
+    color: #c9b47c;
+    background: rgba(251, 191, 36, .035);
+    font-size: 10px;
+    line-height: 1.6;
+  }
+
+  .deck-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 57vh;
+    overflow-y: auto;
+    padding: 3px 8px 3px 2px;
+  }
+  .deck-list::-webkit-scrollbar, .log-box::-webkit-scrollbar { width: 6px; }
+  .deck-list::-webkit-scrollbar-thumb, .log-box::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, .28);
+    border-radius: 99px;
+  }
+  .deck-group h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+  }
+  .deck-group h3 span:last-child {
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  .rarity-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+  .rarity-dot.white { color: var(--white); background: var(--white); }
+  .rarity-dot.yellow { color: var(--gold); background: var(--gold); }
+  .rarity-dot.blue { color: var(--blue); background: var(--blue); }
+  .rarity-dot.purple { color: var(--violet); background: var(--violet); }
+  .rarity-dot.black { color: var(--black); background: var(--black); }
+  .rarity-dot.red { color: var(--red); background: var(--red); }
+
+  .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 6px; }
+  .deck-row {
+    --rarity: var(--white);
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 8px 9px 8px 11px;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-left: 3px solid color-mix(in srgb, var(--rarity), transparent 35%);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, .022);
+    transition: background .15s, border-color .15s;
+  }
+  .deck-row.rarity-white { --rarity: var(--white); }
+  .deck-row.rarity-yellow { --rarity: var(--gold); }
+  .deck-row.rarity-blue { --rarity: var(--blue); }
+  .deck-row.rarity-purple { --rarity: var(--violet); }
+  .deck-row.rarity-black { --rarity: var(--black); }
+  .deck-row.rarity-red { --rarity: var(--red); }
+  .deck-row.is-included { background: color-mix(in srgb, var(--rarity) 5%, transparent); border-color: color-mix(in srgb, var(--rarity) 22%, transparent); }
+  .deck-row:hover { background: rgba(255, 255, 255, .045); }
+  .deck-row-main { flex: 1; min-width: 0; }
+  .deck-row-title { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .mini-rarity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--rarity) 18%, transparent);
+    color: var(--rarity);
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .deck-row-title strong { font-size: 12px; font-weight: 650; line-height: 1.35; }
+  .mini-type {
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .055);
+    color: var(--muted);
+    font-size: 8px;
+    white-space: nowrap;
+  }
+  .deck-row-meta { margin-top: 2px; color: color-mix(in srgb, var(--rarity) 72%, #94a3b8); font-size: 9px; }
+  .deck-row-desc { margin-top: 2px; color: #93a1b8; font-size: 9px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-counter {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 42px;
+  }
+  .deck-counter button {
+    width: 24px;
+    height: 21px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, .055);
+    color: #dbe4f4;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .deck-counter button:hover:not(:disabled) { background: rgba(255, 255, 255, .11); }
+  .deck-counter button:disabled { opacity: .25; cursor: not-allowed; }
+  .deck-count { font-size: 15px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text); }
+  .deck-counter small { color: #6d7c95; font-size: 8px; }
+
+  .pvp-lobby {
+    margin: 0 0 12px;
+    padding: 12px;
+    border: 1px solid rgba(103, 232, 249, .18);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(15, 30, 42, .68), rgba(9, 16, 25, .68));
+  }
+  .pvp-lobby-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+  .pvp-eyebrow { display: block; color: var(--cyan); font-size: 9px; letter-spacing: .18em; margin-bottom: 3px; }
+  .pvp-lobby-head strong { display: block; color: #dbeafe; font-size: 12px; line-height: 1.5; }
+  .pvp-role { padding: 2px 7px; border-radius: 99px; background: rgba(103, 232, 249, .12); color: #a5f3fc; font-size: 9px; white-space: nowrap; }
+  .pvp-action-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+  .pvp-or { color: #64748b; font-size: 10px; }
+  .pvp-input {
+    width: 126px;
+    padding: 9px 10px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 8px;
+    background: rgba(4, 9, 16, .75);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: .18em;
+    outline: none;
+  }
+  .pvp-input:focus { border-color: rgba(103, 232, 249, .55); box-shadow: 0 0 0 2px rgba(103, 232, 249, .08); }
+  .pvp-room { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(148, 163, 184, .10); }
+  .pvp-room > span { color: var(--muted); font-size: 10px; }
+  .pvp-room b { color: #a5f3fc; font-size: 19px; letter-spacing: .18em; font-variant-numeric: tabular-nums; }
+  .pvp-copy { padding: 4px 8px; border: 1px solid rgba(148, 163, 184, .2); border-radius: 6px; background: rgba(255, 255, 255, .05); color: #cbd5e1; font-size: 10px; cursor: pointer; }
+  .pvp-copy:hover { background: rgba(255, 255, 255, .09); }
+  .pvp-state { color: #fcd34d; font-size: 10px; }
+  .pvp-share { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; width: 100%; margin-top: 3px; padding-top: 8px; border-top: 1px solid rgba(148, 163, 184, .10); }
+  .pvp-share > span { color: var(--muted); font-size: 10px; flex: 0 0 auto; }
+  .pvp-share input {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 7px;
+    background: rgba(4, 9, 16, .72);
+    color: #a5f3fc;
+    font-family: inherit;
+    font-size: 10px;
+    outline: none;
+  }
+  .pvp-note { margin-top: 9px; color: #64748b; font-size: 9px; line-height: 1.55; }
+  .setup-panel.guest-mode .deck-list,
+  .setup-panel.guest-mode .setup-actions,
+  .setup-panel.guest-mode .deck-hint,
+  .setup-panel.guest-mode .deck-total-box,
+  .setup-panel.guest-mode .rules { display: none; }
+  #startDuelBtn { display: none; }
+
+  .rules { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .rules summary { color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; }
+  .rules p, .rules li { color: var(--muted); font-size: 11px; line-height: 1.75; }
+  .rules ul { margin: 9px 0 0 18px; }
+  .rules b { color: #dbe4f4; font-weight: 600; }
+  .cap-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+  .cap-table th, .cap-table td { padding: 5px 7px; border-bottom: 1px solid rgba(255, 255, 255, .06); text-align: left; }
+  .cap-table th { color: #cbd5e1; font-weight: 600; }
+  .cap-table td { color: var(--muted); }
+  .cap-table .cap-white { color: var(--white); }
+  .cap-table .cap-yellow { color: var(--gold); }
+  .cap-table .cap-blue { color: var(--blue); }
+  .cap-table .cap-purple { color: var(--violet); }
+  .cap-table .cap-black { color: var(--black); }
+  .cap-table .cap-red { color: var(--red); }
+
+  .duel { animation: reveal .35s ease both; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .info-bar { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; margin-bottom: 11px; }
+  .life-card {
+    position: relative;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, .88), rgba(11, 16, 28, .88));
+    overflow: hidden;
+  }
+  .life-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--green); opacity: .85; }
+  .life-card.ai { text-align: right; }
+  .life-card.ai::before { left: auto; right: 0; background: var(--red); }
+  .life-card.attackable { box-shadow: 0 0 0 1px rgba(251, 113, 133, .55), 0 0 24px rgba(251, 113, 133, .15); cursor: crosshair; }
+  .life-label { display: block; color: var(--muted); font-size: 10px; letter-spacing: .14em; margin-bottom: 2px; }
+  .life-card strong { display: inline-block; font-size: 27px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .life-card.player strong { color: #86efac; }
+  .life-card.ai strong { color: #fda4af; }
+  .life-track { height: 4px; margin-top: 8px; border-radius: 99px; background: rgba(255, 255, 255, .075); overflow: hidden; }
+  .life-track i { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #22c55e, #86efac); transition: width .35s ease, background .35s; }
+  .life-track i.low { background: linear-gradient(90deg, #dc2626, #fb7185); }
+  .life-card.ai .life-track i { background: linear-gradient(90deg, #fb7185, #fda4af); }
+  .life-card small { display: block; margin-top: 6px; color: var(--muted); font-size: 9px; letter-spacing: .02em; }
+
+  .turn-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 122px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: rgba(8, 13, 23, .7);
+  }
+  .turn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 99px;
+    background: rgba(74, 222, 128, .12);
+    border: 1px solid rgba(74, 222, 128, .28);
+    color: #86efac;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .turn-badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  .turn-badge.ai { background: rgba(251, 113, 133, .12); border-color: rgba(251, 113, 133, .28); color: #fda4af; }
+  .turn-card small { margin-top: 6px; color: var(--muted); font-size: 9px; }
+
+  .board { display: grid; gap: 9px; }
+  .field-zone {
+    position: relative;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, .54), rgba(9, 14, 25, .62));
+    overflow: hidden;
+  }
+  .opponent-zone { border-color: rgba(251, 113, 133, .17); background: linear-gradient(180deg, rgba(40, 19, 29, .36), rgba(9, 14, 25, .62)); }
+  .player-zone { border-color: rgba(103, 232, 249, .17); background: linear-gradient(180deg, rgba(18, 36, 45, .34), rgba(9, 14, 25, .62)); }
+  .zone-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: var(--muted); font-size: 11px; letter-spacing: .09em; }
+  .opponent-zone .zone-head > span:first-child { color: #fda4af; }
+  .player-zone .zone-head > span:first-child { color: #a5f3fc; }
+  .zone-count { font-size: 9px; letter-spacing: .04em; color: #6d7c95; }
+  .card-area { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 158px; }
+
+  .board-mid { display: flex; align-items: stretch; gap: 10px; }
+  .vs-mark { flex: 0 0 auto; align-self: center; padding: 7px 2px; color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .25em; writing-mode: vertical-rl; }
+  .tip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid rgba(251, 191, 36, .13);
+    border-left: 2px solid rgba(251, 191, 36, .65);
+    border-radius: 8px;
+    background: rgba(251, 191, 36, .045);
+    color: #fcd34d;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .hand-wrap {
+    margin-top: 9px;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, .70), rgba(9, 14, 25, .76));
+  }
+  .hand-wrap .card-area { min-height: 158px; }
+  .empty-hand { width: 100%; padding: 52px 0; color: #536179; text-align: center; font-size: 11px; letter-spacing: .12em; }
+
+  .card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 108px;
+    height: 154px;
+    padding: 8px 7px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid rgba(226, 232, 240, .28);
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%),
+      linear-gradient(158deg, #1b2333 0%, #0e1420 58%, #151d2c 100%);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .08);
+    cursor: pointer;
+    user-select: none;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, opacity .16s ease;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent 28%, rgba(255, 255, 255, .05) 47%, transparent 66%);
+    transform: translateX(-100%);
+    transition: transform .5s ease;
+  }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 18px 34px rgba(0, 0, 0, .46), 0 0 0 1px rgba(255, 255, 255, .08); }
+  .card:hover::before { transform: translateX(100%); }
+  .card.rarity-white { border-color: rgba(226, 232, 240, .40); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%), linear-gradient(158deg, #26303f 0%, #111821 58%, #1b2431 100%); }
+  .card.rarity-yellow { border-color: rgba(251, 191, 36, .48); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%), linear-gradient(158deg, #3a3018 0%, #18140c 58%, #2a2412 100%); }
+  .card.rarity-blue { border-color: rgba(96, 165, 250, .50); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%), linear-gradient(158deg, #172d46 0%, #0c1524 58%, #12263d 100%); }
+  .card.rarity-purple { border-color: rgba(192, 132, 252, .55); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%), linear-gradient(158deg, #2e1d42 0%, #140e21 58%, #241533 100%); }
+  .card.rarity-black { border-color: rgba(148, 163, 184, .52); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .09), transparent 37%), linear-gradient(158deg, #1b202a 0%, #080b11 58%, #141923 100%); }
+  .card.rarity-red { border-color: rgba(251, 113, 133, .68); background: radial-gradient(circle at 82% 2%, rgba(255, 255, 255, .10), transparent 37%), linear-gradient(158deg, #3d1722 0%, #1a0a10 58%, #2c0f19 100%); box-shadow: 0 12px 28px rgba(0, 0, 0, .42), 0 0 19px rgba(251, 113, 133, .12), inset 0 1px 0 rgba(255, 255, 255, .08); }
+  .card.selected { outline: 2px solid var(--green); outline-offset: 2px; box-shadow: 0 0 28px rgba(74, 222, 128, .22), 0 14px 30px rgba(0, 0, 0, .45); }
+  .card.targetable { outline: 2px solid var(--red); outline-offset: 2px; animation: targetPulse 1.25s ease-in-out infinite; cursor: crosshair; }
+  .card.return-target { outline: 2px solid var(--cyan); outline-offset: 2px; animation: targetPulse 1.25s ease-in-out infinite; cursor: pointer; }
+  @keyframes targetPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 113, 133, .22), 0 12px 26px rgba(0, 0, 0, .36); }
+    50% { box-shadow: 0 0 0 5px rgba(251, 113, 133, 0), 0 0 27px rgba(251, 113, 133, .28); }
+  }
+  .card.tribute-target { outline: 2px solid var(--gold); outline-offset: 2px; animation: tributePulse 1.15s ease-in-out infinite; cursor: crosshair; }
+  @keyframes tributePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, .18), 0 12px 26px rgba(0, 0, 0, .36); }
+    50% { box-shadow: 0 0 0 5px rgba(251, 191, 36, 0), 0 0 26px rgba(251, 191, 36, .28); }
+  }
+  .card.tribute-selected { outline: 2px solid var(--green); outline-offset: 2px; box-shadow: 0 0 26px rgba(74, 222, 128, .28), 0 14px 30px rgba(0, 0, 0, .45); }
+  .card.attacked { opacity: .43; filter: grayscale(.45); }
+  .card.def-mode { border-color: rgba(103, 232, 249, .72); background: linear-gradient(158deg, #173243 0%, #0c1823 58%, #14303e 100%); }
+  .card.set-card { border-style: dashed; }
+  .card.set-card.revealed { border-color: rgba(251, 113, 133, .45); }
+  .card.hidden-set { align-items: center; justify-content: center; gap: 7px; background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .035) 0 6px, transparent 6px 12px), linear-gradient(158deg, #2b1520, #140b12); }
+  .set-seal { font-size: 29px; line-height: 1; color: rgba(251, 113, 133, .62); text-shadow: 0 0 18px rgba(251, 113, 133, .33); }
+  .set-label { color: #fda4af; font-size: 10px; letter-spacing: .18em; }
+  .card-head { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 3px; min-height: 12px; }
+  .card-kind { color: #9aa8be; font-size: 8px; letter-spacing: .10em; white-space: nowrap; }
+  .card-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+  .card-badge, .new-tag {
+    display: inline-block;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-size: 7px;
+    line-height: 12px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+  .card-badge.rarity-white { color: #f1f5f9; background: rgba(226, 232, 240, .16); }
+  .card-badge.rarity-yellow { color: #fef3c7; background: rgba(251, 191, 36, .18); }
+  .card-badge.rarity-blue { color: #dbeafe; background: rgba(96, 165, 250, .18); }
+  .card-badge.rarity-purple { color: #f3e8ff; background: rgba(192, 132, 252, .20); }
+  .card-badge.rarity-black { color: #e2e8f0; background: rgba(148, 163, 184, .18); }
+  .card-badge.rarity-red { color: #ffe4e6; background: rgba(251, 113, 133, .22); }
+  .card-badge.seven { color: #e9d5ff; background: rgba(192, 132, 252, .20); }
+  .card-badge.cost { color: #fde68a; background: rgba(251, 191, 36, .14); }
+  .new-tag { color: #fef3c7; background: rgba(251, 191, 36, .20); }
+  .card-name { position: relative; z-index: 1; font-size: 11px; font-weight: 750; line-height: 1.25; letter-spacing: .01em; text-shadow: 0 1px 8px rgba(0, 0, 0, .45); }
+  .card.rarity-red .card-name { color: #ffe4ea; }
+  .card-desc { position: relative; z-index: 1; flex: 1; color: #c5cfdf; font-size: 8px; line-height: 1.38; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
+  .card-foot { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 3px; }
+  .card-atkdef { display: flex; flex-direction: column; align-items: flex-end; gap: 0; color: #fde68a; font-size: 8px; font-weight: 700; line-height: 1.15; text-align: right; white-space: nowrap; }
+  .card.rarity-red .card-atkdef { color: #ffc2cf; }
+  .mode-tag { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 4px; font-size: 8px; font-weight: 800; }
+  .mode-tag.atk { color: #fda4af; background: rgba(251, 113, 133, .15); }
+  .mode-tag.def { color: #a5f3fc; background: rgba(103, 232, 249, .14); }
+  .mode-tag.spell { color: #bfdbfe; background: rgba(96, 165, 250, .14); }
+  .mode-tag.trap { color: #fecdd3; background: rgba(251, 113, 133, .14); }
+
+  .slot { flex: 0 0 auto; width: 108px; height: 154px; display: grid; place-items: center; border: 1px dashed rgba(148, 163, 184, .16); border-radius: 10px; background: rgba(255, 255, 255, .012); color: rgba(148, 163, 184, .15); font-size: 18px; font-weight: 300; }
+
+  .graveyard { display: flex; align-items: center; gap: 10px; margin-top: 9px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; background: rgba(7, 11, 19, .66); color: var(--muted); font-size: 10px; line-height: 1.5; }
+  .grave-label { flex: 0 0 auto; color: #cbd5e1; letter-spacing: .08em; }
+  .grave-label b { color: var(--gold); font-weight: 700; }
+  .grave-list { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .control-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; padding: 10px; border: 1px solid var(--line); border-radius: 13px; background: rgba(17, 24, 39, .55); }
+  .control-bar .btn:nth-last-child(2) { margin-left: auto; }
+
+  .log-box { height: 174px; padding: 11px 14px; overflow-y: auto; border: 1px solid var(--line); border-radius: 13px; background: rgba(4, 7, 13, .76); color: #94a3b8; font-size: 11px; line-height: 1.7; scroll-behavior: smooth; }
+  .log-line { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .log-line + .log-line { margin-top: 1px; }
+  .log-line.system { color: #74839c; }
+  .log-line.player { color: #93c5fd; }
+  .log-line.ai { color: #fda4af; }
+  .log-line.damage { color: #f87171; }
+  .log-line.good { color: #86efac; }
+  .log-line.cost { color: #fbbf24; }
+  .log-line.summon { color: #c4b5fd; }
+
+  .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(4, 7, 14, .78); -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px); }
+  .result-card { width: min(430px, 100%); padding: 32px 28px 28px; text-align: center; border: 1px solid rgba(244, 114, 182, .28); border-radius: 20px; background: radial-gradient(circle at 50% 0%, rgba(244, 114, 182, .16), transparent 48%), linear-gradient(180deg, #141b2b, #0a0f19); box-shadow: 0 30px 90px rgba(0, 0, 0, .62), 0 0 60px rgba(244, 114, 182, .08); animation: resultIn .38s cubic-bezier(.2, .8, .2, 1) both; }
+  @keyframes resultIn { from { opacity: 0; transform: translateY(15px) scale(.97); } to { opacity: 1; transform: none; } }
+  #resultIcon { margin-bottom: 10px; color: var(--pink); font-size: 38px; line-height: 1; text-shadow: 0 0 32px rgba(244, 114, 182, .45); }
+  #resultTitle { font-size: 25px; letter-spacing: .08em; margin-bottom: 9px; }
+  #resultDesc { min-height: 20px; color: var(--muted); font-size: 12px; line-height: 1.7; margin-bottom: 22px; }
+
+  @media (max-width: 760px) {
+    body { padding: 16px 8px 32px; }
+    .setup-panel { padding: 16px; }
+    .setup-head { flex-direction: column; gap: 8px; }
+    .deck-total-box { text-align: left; }
+    .deck-grid { grid-template-columns: 1fr; }
+    .deck-list { max-height: 52vh; }
+    .pvp-lobby { padding: 10px; }
+    .pvp-action-row .btn { flex: 1 1 auto; }
+    .pvp-or { display: none; }
+    .pvp-input { flex: 1 1 120px; width: auto; }
+    .pvp-room { align-items: flex-start; }
+    .pvp-room .btn { flex: 1 1 auto; }
+    .pvp-share { align-items: stretch; }
+    .pvp-share input { flex-basis: 100%; }
+    .info-bar { grid-template-columns: 1fr 1fr; }
+    .turn-card { grid-column: 1 / -1; grid-row: 1; flex-direction: row; justify-content: center; gap: 10px; min-width: 0; padding: 7px 10px; }
+    .turn-card small { margin-top: 0; }
+    .life-card strong { font-size: 23px; }
+    .field-zone, .hand-wrap { padding: 9px; }
+    .card-area { min-height: 128px; gap: 6px; }
+    .card, .slot { width: 82px; height: 121px; }
+    .card { padding: 6px 5px 5px; border-radius: 8px; gap: 3px; }
+    .card-name { font-size: 9.5px; }
+    .card-desc { font-size: 7.5px; -webkit-line-clamp: 4; }
+    .card-atkdef { font-size: 7.5px; }
+    .card-kind { font-size: 7px; }
+    .tip { font-size: 10px; padding: 7px 9px; }
+    .board-mid { gap: 5px; }
+    .vs-mark { display: none; }
+    .control-bar .btn:nth-last-child(2) { margin-left: 0; }
+    .log-box { height: 150px; }
+    .cap-table { font-size: 9px; }
+  }
+  @media (max-width: 430px) {
+    .hero h1 { font-size: 25px; }
+    .hero .subtitle { font-size: 11px; }
+    .deck-row-desc { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .card, .slot { width: 74px; height: 109px; }
+    .card-area { min-height: 115px; gap: 5px; }
+    .card-desc { display: none; }
+    .life-card { padding: 9px 10px; }
+    .life-card strong { font-size: 20px; }
+    .life-card small { font-size: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <p class="kicker">Chrono Pact / Friend Duel</p>
+    <h1>时之契 · 好友约战</h1>
+    <p class="subtitle">输入同一个房间号，两个人各控一方。房间使用房主卡组，红卡前三回合封印。</p>
+  </header>
+
+  <section id="setupPanel" class="panel setup-panel">
+    <div class="setup-head">
+      <div>
+        <h2>好友约战</h2>
+        <p class="muted">100 张卡组 · 起手 5 张 · 每回合抽 2 张 · 生命 2500 · 场上 5 格</p>
+      </div>
+      <div class="deck-total-box">
+        <span id="deckTotal">100</span><small> / 100</small>
+        <div id="deckNeed">卡组已满</div>
+      </div>
+    </div>
+
+    <div id="pvpLobby" class="pvp-lobby">
+      <div class="pvp-lobby-head">
+        <div>
+          <span class="pvp-eyebrow">房间号 · 1v1</span>
+          <strong id="pvpStatus">创建房间，或输入房间号加入</strong>
+        </div>
+        <span id="pvpRoleBadge" class="pvp-role hidden">房主</span>
+      </div>
+
+      <div id="pvpLanding" class="pvp-action-row">
+        <button id="createRoomBtn" class="btn primary" type="button">创建房间</button>
+        <span class="pvp-or">或</span>
+        <input id="roomCodeInput" class="pvp-input" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6位房间号">
+        <button id="joinRoomBtn" class="btn ghost" type="button">加入房间</button>
+      </div>
+
+      <div id="pvpHostBox" class="pvp-room hidden">
+        <span>房间号</span><b id="roomCode">------</b>
+        <button id="copyRoomBtn" class="pvp-copy" type="button">复制</button>
+        <span id="guestStatus" class="pvp-state">等待对手加入…</span>
+        <button id="startPvpBtn" class="btn primary" type="button" disabled>开始决斗</button>
+        <div class="pvp-share">
+          <span>手机加入链接</span>
+          <input id="joinUrl" type="text" readonly value="创建房间后生成">
+          <button id="copyJoinUrlBtn" class="pvp-copy" type="button">复制链接</button>
+        </div>
+      </div>
+
+      <div id="pvpGuestBox" class="pvp-room hidden">
+        <span id="guestStatusText" class="pvp-state">已加入，等待房主开始…</span>
+      </div>
+
+      <div class="pvp-note">双击 <code>启动好友约战.bat</code> 启动服务并打开本页；<b>不要直接双击 server.js</b>（Windows 会把它当 JScript 报语法错误）。同一局域网用 <code>http://本机IP:8787/pvp.html</code>。房主卡组会同时用于双方。</div>
+    </div>
+
+    <div class="setup-actions">
+      <button id="recommendDeckBtn" class="btn primary" type="button">推荐构筑</button>
+      <button id="clearDeckBtn" class="btn ghost" type="button">清空</button>
+      <button id="startDuelBtn" class="btn danger" type="button">开始决斗</button>
+    </div>
+
+    <div class="deck-hint">
+      同名卡上限：白 / 黄 / 蓝 12 张，紫 8 张，黑 4 张，红 2 张。卡组固定 100 张；要增加同名卡，先减少其他卡。推荐构筑会自动补到 100 张。红卡在前 3 回合封印，第 4 回合起解禁。
+    </div>
+
+    <div id="deckList" class="deck-list"></div>
+
+    <details class="rules">
+      <summary>规则与等级上限</summary>
+      <ul>
+        <li>双方生命 <b>2500</b>，卡组 <b>100</b> 张，起手 <b>5</b> 张，每回合抽 <b>2</b> 张。</li>
+        <li><b>白卡</b>是通常陷阱，可以直接盖放；<b>黄/蓝</b>怪兽可以直接召唤。</li>
+        <li><b>紫怪兽</b>需要献祭自己场上 1 张黄/蓝怪兽；<b>黑怪兽</b>需要献祭 2 张黄/蓝，或 1 张紫怪兽；<b>红怪兽</b>需要献祭 2 张黑怪兽。</li>
+        <li>每回合只能进行 <b>1 次</b>紫/黑/红高阶召唤；献祭的怪兽送入墓地；高阶怪兽召唤当回合不能攻击。</li>
+        <li><b>红卡封印</b>：前 3 回合红卡不会被抽到，也不能使用；第 4 回合起解禁。</li>
+        <li>七殿：帝冕、焚怒、吞金为黑；影妒、迟暮、饕餮、媚骨为紫。【灾厄天罚】需要自己场上至少 3 只七殿怪兽。</li>
+        <li>攻击表示互殴，攻击力高者破坏对方并造成差值伤害；攻击守备怪兽时，只有带“贯穿”的怪兽能造成差值伤害。</li>
+        <li><b>伤害不足</b>：进攻怪兽攻击力低于对方怪兽时，进攻怪兽被破坏，对方怪兽防御力-差值，不扣玩家生命；对方怪兽防御力归零则被破坏。</li>
+        <li><b>卡牌伤害</b>：怪兽防御力同时视为卡牌生命。卡牌伤害扣防御力，归零破坏，不扣玩家生命；只有部分高阶卡直接对玩家造成伤害。</li>
+        <li>怪兽刚召唤的回合不能攻击；陷阱在满足条件时自动发动。</li>
+      </ul>
+      <table class="cap-table">
+        <thead><tr><th>等级</th><th>同名上限</th><th>攻击上限</th><th>防御上限</th><th>效果伤害上限</th></tr></thead>
+        <tbody>
+          <tr><td class="cap-white">白（通常陷阱）</td><td>12</td><td>—</td><td>—</td><td>150</td></tr>
+          <tr><td class="cap-yellow">黄</td><td>12</td><td>500</td><td>700</td><td>200</td></tr>
+          <tr><td class="cap-blue">蓝</td><td>12</td><td>700</td><td>900</td><td>300</td></tr>
+          <tr><td class="cap-purple">紫</td><td>8</td><td>1050</td><td>1100</td><td>400</td></tr>
+          <tr><td class="cap-black">黑</td><td>4</td><td>1100</td><td>1100</td><td>500</td></tr>
+          <tr><td class="cap-red">红</td><td>2</td><td>1300</td><td>1100</td><td>700</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </section>
+
+  <section id="duelArea" class="duel hidden">
+    <div class="info-bar">
+      <div class="life-card player" id="playerLife">
+        <span class="life-label">你的生命</span>
+        <strong id="playerHp">2500</strong>
+        <div class="life-track"><i id="playerHpBar"></i></div>
+        <small id="playerDeckInfo">卡组 0 · 手牌 0</small>
+      </div>
+      <div class="turn-card">
+        <span id="turnBadge" class="turn-badge">你的回合</span>
+        <small id="turnCount">第 1 回合</small>
+      </div>
+      <div class="life-card ai" id="aiLife" title="对手无怪兽时，可直接攻击">
+        <span class="life-label">对手生命</span>
+        <strong id="aiHp">2500</strong>
+        <div class="life-track"><i id="aiHpBar"></i></div>
+        <small id="aiDeckInfo">卡组 0 · 手牌 0</small>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="field-zone opponent-zone">
+        <div class="zone-head"><span>对手场上</span><span id="aiFieldCount" class="zone-count">0 / 5</span></div>
+        <div class="card-area" id="aiField"></div>
+      </div>
+
+      <div class="board-mid">
+        <div class="vs-mark">VS</div>
+        <div class="tip" id="attackTip">点击自己场上的攻击表示怪兽选中攻击者，再点击对手怪兽；对手无怪兽时可直击。</div>
+      </div>
+
+      <div class="field-zone player-zone">
+        <div class="zone-head"><span>你的场上</span><span id="playerFieldCount" class="zone-count">0 / 5</span></div>
+        <div class="card-area" id="playerField"></div>
+      </div>
+    </div>
+
+    <div class="hand-wrap">
+      <div class="zone-head"><span>你的手牌</span><span id="handCount" class="zone-count">0</span></div>
+      <div class="card-area" id="playerHand"></div>
+    </div>
+
+    <div class="graveyard">
+      <span class="grave-label">墓地 <b id="gyCount">0</b></span>
+      <span id="gyList" class="grave-list">空</span>
+    </div>
+
+    <div class="control-bar">
+      <button id="endTurnBtn" class="btn primary" type="button">结束回合</button>
+      <button id="directAttackBtn" class="btn danger" type="button">直接攻击对手</button>
+      <button id="returnMonsterBtn" class="btn ghost" type="button">收回怪兽</button>
+      <button id="cancelSelectBtn" class="btn ghost" type="button">取消选择</button>
+      <button id="restartBtn" class="btn ghost" type="button">重新开局</button>
+    </div>
+
+    <div class="log-box" id="gameLog" aria-live="polite"></div>
+  </section>
+</div>
+
+<div id="resultOverlay" class="overlay hidden">
+  <div class="result-card">
+    <div id="resultIcon">✦</div>
+    <h2 id="resultTitle">决斗胜利</h2>
+    <p id="resultDesc"></p>
+    <div class="setup-actions center">
+      <button id="rematchBtn" class="btn primary" type="button">再战一次</button>
+      <button id="editDeckBtn" class="btn ghost" type="button">编辑卡组</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const MAX_HP = 2500;
+  const MAX_FIELD = 5;
+  const DECK_SIZE = 100;
+  const BUILD_MAX = 140;
+  const START_HAND = 5;
+  const DRAW_PER_TURN = 2;
+  const DEFAULT_TIP = "点击攻击表示怪兽选中，再点对手怪兽；无对手怪兽时可直击。点击守备怪兽切回攻击。高阶怪兽需要先献祭。";
+
+  const RARITY = {
+    white:  { key: "white",  label: "白", name: "通常", copyLimit: 12, atkCap: 0,    defCap: 0,    dmgCap: 150,  rank: 0 },
+    yellow: { key: "yellow", label: "黄", name: "低阶", copyLimit: 12, atkCap: 500,  defCap: 700,  dmgCap: 200,  rank: 1 },
+    blue:   { key: "blue",   label: "蓝", name: "中阶", copyLimit: 12, atkCap: 700,  defCap: 900,  dmgCap: 300,  rank: 2 },
+    purple: { key: "purple", label: "紫", name: "高阶", copyLimit: 8,  atkCap: 1050, defCap: 1100, dmgCap: 400,  rank: 3 },
+    black:  { key: "black",  label: "黑", name: "极阶", copyLimit: 4,  atkCap: 1100, defCap: 1100, dmgCap: 500,  rank: 4 },
+    red:    { key: "red",    label: "红", name: "终阶", copyLimit: 2,  atkCap: 1300, defCap: 1100, dmgCap: 700,  rank: 5 }
+  };
+
+  const CARD_DB = [
+    // 白 · 通常陷阱
+    { id: 1, name: "绊索", rarity: "white", type: "trap", race: "通常陷阱", desc: "对手怪兽攻击时，破坏那只攻击怪兽。", trapTrigger: "attack", trapEffects: [{ kind: "destroyAttacker" }] },
+    { id: 2, name: "灵石壁垒", rarity: "white", type: "trap", race: "通常陷阱", desc: "对手怪兽攻击时，取消攻击，攻击怪兽攻击力-200。", trapTrigger: "attack", trapEffects: [{ kind: "negateAttack" }, { kind: "debuffAttacker", amount: 200 }] },
+    { id: 3, name: "回响之镜", rarity: "white", type: "trap", race: "通常陷阱", desc: "受到战斗伤害时，反弹150伤害给对手。", trapTrigger: "damage", trapEffects: [{ kind: "reflect", amount: 150 }] },
+    { id: 4, name: "迷雾符", rarity: "white", type: "trap", race: "通常陷阱", desc: "对手怪兽攻击时，攻击怪兽攻击力-300，攻击继续。", trapTrigger: "attack", trapEffects: [{ kind: "debuffAttacker", amount: 300 }] },
+
+    // 黄 · 低阶
+    { id: 11, name: "黑石岭黑风狼", rarity: "yellow", type: "monster", race: "妖兽", atk: 450, def: 400, desc: "一阶妖兽，成群时最难缠。" },
+    { id: 12, name: "月兔", rarity: "yellow", type: "monster", race: "灵兽", atk: 250, def: 550, desc: "召唤时，恢复150生命。", summonEffects: [{ kind: "heal", amount: 150 }] },
+    { id: 13, name: "青藤", rarity: "yellow", type: "monster", race: "灵植", atk: 350, def: 650, desc: "召唤时，对手1只怪兽攻击力-150。", summonEffects: [{ kind: "debuffOne", amount: 150 }] },
+    { id: 14, name: "陈垚", rarity: "yellow", type: "monster", race: "觉醒者", atk: 450, def: 700, desc: "土系觉醒者，守备时像一堵墙。" },
+    { id: 15, name: "黑毛野猪", rarity: "yellow", type: "monster", race: "妖兽", atk: 500, def: 350, desc: "凡兽，皮糙肉厚，冲起来不看路。" },
+    { id: 16, name: "柳青", rarity: "yellow", type: "monster", race: "觉醒者", atk: 400, def: 650, desc: "召唤时，恢复150生命。", summonEffects: [{ kind: "heal", amount: 150 }] },
+    { id: 17, name: "时感", rarity: "yellow", type: "spell", race: "法术", desc: "支付200生命，抽1张卡。", lpCost: 200, spellEffects: [{ kind: "draw", count: 1 }] },
+    { id: 18, name: "灵力斩", rarity: "yellow", type: "spell", race: "法术", desc: "破坏对手1只防御不超过600的怪兽。", spellEffects: [{ kind: "destroyOne", maxDef: 600 }] },
+
+    // 蓝 · 中阶
+    { id: 21, name: "雷承【雷】", rarity: "blue", type: "monster", race: "觉醒者", atk: 700, def: 550, desc: "召唤时，对对手1只怪兽造成250卡牌伤害。", summonEffects: [{ kind: "cardDamageOne", amount: 250 }] },
+    { id: 22, name: "祝炎【火】", rarity: "blue", type: "monster", race: "觉醒者", atk: 650, def: 550, desc: "召唤时，对对手1只怪兽造成150卡牌伤害。", summonEffects: [{ kind: "cardDamageOne", amount: 150 }] },
+    { id: 23, name: "叶琴【音】", rarity: "blue", type: "monster", race: "觉醒者", atk: 550, def: 750, desc: "召唤时，对手全部怪兽攻击力-150。", summonEffects: [{ kind: "debuffAll", amount: 150 }] },
+    { id: 24, name: "婉淼【甘露】", rarity: "blue", type: "monster", race: "觉醒者", atk: 500, def: 800, desc: "召唤时，恢复250生命。", summonEffects: [{ kind: "heal", amount: 250 }] },
+    { id: 25, name: "噬魂毒蟒", rarity: "blue", type: "monster", race: "妖兽", atk: 650, def: 450, desc: "战斗破坏怪兽时，恢复150生命。", onBattleDestroy: [{ kind: "heal", amount: 150 }] },
+    { id: 26, name: "托生【幼狼】", rarity: "blue", type: "monster", race: "灵兽", atk: 600, def: 500, desc: "召唤时，恢复150生命。", summonEffects: [{ kind: "heal", amount: 150 }] },
+    { id: 27, name: "雷弧", rarity: "blue", type: "spell", race: "法术", desc: "对对手1只怪兽造成300卡牌伤害。", spellEffects: [{ kind: "cardDamageOne", amount: 300 }] },
+    { id: 28, name: "火墙", rarity: "blue", type: "spell", race: "法术", desc: "对对手全部怪兽造成250卡牌伤害，攻击力-150。", spellEffects: [{ kind: "cardDamageAll", amount: 250 }, { kind: "debuffAll", amount: 150 }] },
+    { id: 29, name: "迟滞之枷", rarity: "blue", type: "trap", race: "陷阱", desc: "对手怪兽攻击时，取消攻击，攻击怪兽攻击力-400。", trapTrigger: "attack", trapEffects: [{ kind: "negateAttack" }, { kind: "debuffAttacker", amount: 400 }] },
+
+    // 紫 · 高阶
+    { id: 31, name: "时衍【时间小蛇】", rarity: "purple", type: "monster", race: "觉醒者", atk: 900, def: 750, desc: "召唤时，对手1只怪兽攻击力-250。", summonEffects: [{ kind: "debuffOne", amount: 250 }] },
+    { id: 32, name: "时小棠【黑暗百合】", rarity: "purple", type: "monster", race: "觉醒者", atk: 800, def: 850, desc: "召唤时，对手全部怪兽攻击力-150。", summonEffects: [{ kind: "debuffAll", amount: 150 }] },
+    { id: 33, name: "寰宇【星辰】", rarity: "purple", type: "monster", race: "觉醒者", atk: 1000, def: 800, desc: "召唤时，对对手1只怪兽造成350卡牌伤害。", summonEffects: [{ kind: "cardDamageOne", amount: 350 }] },
+    { id: 34, name: "赤焰虎", rarity: "purple", type: "monster", race: "妖兽", atk: 950, def: 650, desc: "贯穿：攻击守备怪兽时，造成差值战斗伤害。", pierce: true },
+    { id: 35, name: "青鸾", rarity: "purple", type: "monster", race: "灵兽", atk: 850, def: 1050, desc: "召唤时，恢复350生命。", summonEffects: [{ kind: "heal", amount: 350 }] },
+    { id: 36, name: "影妒【嫉妒殿】", rarity: "purple", type: "monster", race: "七殿", isSevenHall: true, atk: 1000, def: 1100, desc: "召唤时，吸收对手1只怪兽250攻击。", summonEffects: [{ kind: "buffSelf", amount: 250 }, { kind: "debuffOne", amount: 250 }] },
+    { id: 37, name: "迟暮【懒惰殿】", rarity: "purple", type: "monster", race: "七殿", isSevenHall: true, atk: 750, def: 1100, desc: "召唤时，对手全部怪兽攻击力-200。", summonEffects: [{ kind: "debuffAll", amount: 200 }] },
+    { id: 38, name: "饕餮【暴食殿】", rarity: "purple", type: "monster", race: "七殿", isSevenHall: true, atk: 1050, def: 950, desc: "战斗破坏怪兽时，恢复250生命。", onBattleDestroy: [{ kind: "heal", amount: 250 }] },
+    { id: 39, name: "媚骨【欲殿】", rarity: "purple", type: "monster", race: "七殿", isSevenHall: true, atk: 850, def: 1100, desc: "召唤时，对手1只怪兽攻击力-400。", summonEffects: [{ kind: "debuffOne", amount: 400 }] },
+    { id: 40, name: "时间减速", rarity: "purple", type: "spell", race: "法术", desc: "破坏对手1只怪兽。", spellEffects: [{ kind: "destroyOne" }] },
+    { id: 41, name: "血色献祭", rarity: "purple", type: "spell", race: "法术", desc: "支付500生命，破坏对手全部怪兽。", lpCost: 500, spellEffects: [{ kind: "destroyAll" }] },
+    { id: 42, name: "玫瑰迷幻", rarity: "purple", type: "trap", race: "陷阱", desc: "受到战斗伤害时，反弹250伤害给对手。", trapTrigger: "damage", trapEffects: [{ kind: "reflect", amount: 250 }] },
+
+    // 黑 · 极阶
+    { id: 51, name: "帝冕【傲慢殿】", rarity: "black", type: "monster", race: "七殿", isSevenHall: true, atk: 1100, def: 1100, desc: "召唤时，对手全部怪兽攻击力/防御力-200。", summonEffects: [{ kind: "debuffAll", amount: 200 }, { kind: "debuffAllDef", amount: 200 }] },
+    { id: 52, name: "焚怒【怒殿】", rarity: "black", type: "monster", race: "七殿", isSevenHall: true, atk: 1050, def: 1100, desc: "自己受到战斗伤害时，此卡攻击力+150。", onBattleDamage: [{ kind: "buffSelf", amount: 150 }] },
+    { id: 53, name: "吞金【贪婪殿】", rarity: "black", type: "monster", race: "七殿", isSevenHall: true, atk: 1000, def: 1100, desc: "召唤时，吸收对手1只怪兽300攻击。", summonEffects: [{ kind: "buffSelf", amount: 300 }, { kind: "debuffOne", amount: 300 }] },
+    { id: 54, name: "银月【狼母】", rarity: "black", type: "monster", race: "妖兽", atk: 1000, def: 1100, desc: "召唤时，恢复400生命，对手全部怪兽攻击力-200。", summonEffects: [{ kind: "heal", amount: 400 }, { kind: "debuffAll", amount: 200 }] },
+    { id: 55, name: "七镜封锁", rarity: "black", type: "trap", race: "陷阱", desc: "对手怪兽攻击时，破坏攻击怪兽，给予对手150伤害。", trapTrigger: "attack", trapEffects: [{ kind: "destroyAttacker" }, { kind: "damageOpponent", amount: 150 }] },
+
+    // 红 · 终阶
+    { id: 61, name: "时间轮回戟", rarity: "red", type: "monster", race: "器物", atk: 1300, def: 1100, desc: "贯穿。战斗破坏怪兽后，给予对手300效果伤害。", pierce: true, onBattleDestroy: [{ kind: "damage", amount: 300 }] },
+    { id: 62, name: "灾厄天罚", rarity: "red", type: "spell", race: "法术", desc: "自己场上至少3只七殿怪兽；破坏对手全部怪兽，给予500效果伤害。", requiresSeven: 3, spellEffects: [{ kind: "destroyAll" }, { kind: "damage", amount: 500 }] }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const isMonster = (card) => Boolean(card) && card.type === "monster";
+  const otherSide = (side) => (side === "player" ? "ai" : "player");
+  const sideName = (side) => (side === "player" ? "房主" : "玩家2");
+  const hpKey = (side) => (side === "player" ? "playerHp" : "aiHp");
+  const rarityOf = (card) => RARITY[card.rarity] || RARITY.yellow;
+
+  let uidCounter = 1;
+  let deckCounts = makeRecommendedCounts();
+  let lastDeckCounts = { ...deckCounts };
+  let state = createState();
+
+  const PVP = {
+    role: null,
+    code: null,
+    token: null,
+    source: null,
+    guestConnected: false,
+    active: false,
+    broadcastTimer: null
+  };
+
+  function createState() {
+    return {
+      playerHp: MAX_HP,
+      aiHp: MAX_HP,
+      playerHand: [],
+      aiHand: [],
+      playerField: [],
+      aiField: [],
+      playerDeck: [],
+      aiDeck: [],
+      graveyard: [],
+      turn: "player",
+      turnNo: 1,
+      phase: "setup",
+      selectedAttacker: null,
+      pendingSummon: null,
+      highSummonUsed: false,
+      returnUsed: false,
+      returnMode: false,
+      gameOver: false,
+      result: null,
+      resultReason: "",
+      busy: false,
+      flowToken: 0,
+      tip: DEFAULT_TIP,
+      log: []
+    };
+  }
+
+  function fieldOf(side) { return side === "player" ? state.playerField : state.aiField; }
+  function handOf(side) { return side === "player" ? state.playerHand : state.aiHand; }
+  function deckOf(side) { return side === "player" ? state.playerDeck : state.aiDeck; }
+  function monstersOf(field) { return field.filter(isMonster); }
+  function countSeven(field) { return field.filter((card) => isMonster(card) && (card.isSevenHall || card.race === "七殿")).length; }
+  function canPlayerAct() { return !state.gameOver && !state.busy && state.turn === "player" && state.phase === "player"; }
+  function canAttack(card) { return isMonster(card) && !card.defenseMode && !card.attacked && !card.summonThisTurn; }
+  function redLocked() { return state.turnNo < 4; }
+  function redCardBlocked(card) { return Boolean(card) && card.rarity === "red" && redLocked(); }
+
+  function shuffle(list) {
+    const arr = [...list];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function makeCard(definition, owner) {
+    return {
+      ...definition,
+      uid: uidCounter++,
+      owner,
+      attacked: false,
+      defenseMode: false,
+      summonThisTurn: false,
+      isSetTrap: false
+    };
+  }
+
+  function getTributeRequirement(card) {
+    if (!isMonster(card)) return null;
+    if (card.rarity === "purple") {
+      return { label: "献祭1张黄/蓝怪兽", options: [{ count: 1, rarities: ["yellow", "blue"] }] };
+    }
+    if (card.rarity === "black") {
+      return {
+        label: "献祭2张黄/蓝，或1张紫怪兽",
+        options: [
+          { count: 2, rarities: ["yellow", "blue"] },
+          { count: 1, rarities: ["purple"] }
+        ]
+      };
+    }
+    if (card.rarity === "red") {
+      return { label: "献祭2张黑怪兽", options: [{ count: 2, rarities: ["black"] }] };
+    }
+    return null;
+  }
+
+  function tributeBadge(card) {
+    const req = getTributeRequirement(card);
+    if (!req) return "";
+    return card.rarity === "black" ? "祭2/紫1" : card.rarity === "red" ? "祭2黑" : "祭1";
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+
+  function log(text, cls = "system") {
+    state.log.push({ text, cls });
+    if (state.log.length > 240) state.log.splice(0, state.log.length - 240);
+    renderLog();
+  }
+
+  function renderLog() {
+    const box = $("gameLog");
+    if (!box) return;
+    const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
+    const previousScroll = box.scrollTop;
+    if (!state.log.length) {
+      box.innerHTML = '<span class="log-line system">等待决斗开始……</span>';
+      return;
+    }
+    box.innerHTML = state.log.map((entry) =>
+      `<span class="log-line ${entry.cls}">${escapeHtml(entry.text)}</span>`
+    ).join("");
+    if (atBottom || state.log.length < 3) box.scrollTop = box.scrollHeight;
+    else box.scrollTop = previousScroll;
+  }
+
+  function setTip(text) {
+    state.tip = text;
+    const el = $("attackTip");
+    if (el) el.textContent = text;
+  }
+
+  function resetTurnFlags(side) {
+    fieldOf(side).forEach((card) => {
+      if (isMonster(card)) {
+        card.attacked = false;
+        card.summonThisTurn = false;
+      }
+    });
+  }
+
+  function canReturnMonster(card) {
+    return isMonster(card) && !card.attacked;
+  }
+
+  function returnMonster(card, side) {
+    if (state.returnUsed || !canReturnMonster(card)) return false;
+    const field = fieldOf(side);
+    const index = field.findIndex((item) => item.uid === card.uid);
+    if (index === -1) return false;
+    field.splice(index, 1);
+    card.attacked = false;
+    card.summonThisTurn = false;
+    card.defenseMode = false;
+    card.cannotSummonTurn = state.turnNo;
+    handOf(side).push(card);
+    state.returnUsed = true;
+    state.returnMode = false;
+    state.selectedAttacker = null;
+    log(`${sideName(side)}将【${card.name}】收回手牌。`, side === "player" ? "player" : "ai");
+    if (side === "player") {
+      setTip(`【${card.name}】已收回手牌；本回合不能再次召唤它。`);
+    }
+    renderAll();
+    return true;
+  }
+
+  // ---------- 卡组构筑 ----------
+
+  function makeRecommendedCounts() {
+    const counts = Object.fromEntries(CARD_DB.map((card) => [card.id, 1]));
+    let total = CARD_DB.length;
+    let progressed = true;
+    while (total < DECK_SIZE && progressed) {
+      progressed = false;
+      for (const card of CARD_DB) {
+        if (total >= DECK_SIZE) break;
+        const limit = rarityOf(card).copyLimit;
+        if ((counts[card.id] || 0) < limit) {
+          counts[card.id] += 1;
+          total += 1;
+          progressed = true;
+        }
+      }
+    }
+    return counts;
+  }
+
+  function totalDeckCount() {
+    return CARD_DB.reduce((sum, card) => sum + (deckCounts[card.id] || 0), 0);
+  }
+
+  function renderDeckBuilder() {
+    const groups = [
+      { rarity: "white", title: "白色 · 通常陷阱" },
+      { rarity: "yellow", title: "黄色 · 低阶" },
+      { rarity: "blue", title: "蓝色 · 中阶" },
+      { rarity: "purple", title: "紫色 · 高阶" },
+      { rarity: "black", title: "黑色 · 极阶 / 七殿" },
+      { rarity: "red", title: "红色 · 终阶" }
+    ];
+
+    $("deckList").innerHTML = groups.map((group) => {
+      const cards = CARD_DB.filter((card) => card.rarity === group.rarity);
+      return `
+        <section class="deck-group">
+          <h3><span class="rarity-dot ${group.rarity}"></span><span>${group.title}</span><span>${cards.length} 种</span></h3>
+          <div class="deck-grid">${cards.map(renderDeckRow).join("")}</div>
+        </section>`;
+    }).join("");
+
+    refreshDeckUI();
+  }
+
+  function renderDeckRow(card) {
+    const rarity = rarityOf(card);
+    const limit = rarity.copyLimit;
+    const req = getTributeRequirement(card);
+    const isMonsterCard = isMonster(card);
+    const hasSpellDamage = (card.spellEffects || []).some((effect) =>
+      ["damage", "cardDamageOne", "cardDamageAll"].includes(effect.kind)
+    );
+    const meta = isMonsterCard
+      ? `攻击 ${card.atk} / 防御 ${card.def} · 上限 ${rarity.atkCap}/${rarity.defCap}`
+      : card.type === "spell"
+        ? (hasSpellDamage ? `法术 · 效果伤害上限 ${rarity.dmgCap}` : "法术")
+        : "陷阱 · 可直接盖放";
+    const costLine = req ? ` · ${req.label}` : "";
+    return `
+      <div class="deck-row rarity-${card.rarity}" data-id="${card.id}">
+        <div class="deck-row-main">
+          <div class="deck-row-title">
+            <span class="mini-rarity">${rarity.label}</span>
+            <strong>${escapeHtml(card.name)}</strong>
+            <span class="mini-type">${escapeHtml(card.race)}</span>
+          </div>
+          <div class="deck-row-meta">${meta}${costLine}</div>
+          <div class="deck-row-desc" title="${escapeHtml(card.desc)}">${escapeHtml(card.desc)}</div>
+        </div>
+        <div class="deck-counter">
+          <button type="button" data-action="plus" aria-label="增加 ${escapeHtml(card.name)}">+</button>
+          <span class="deck-count">0</span>
+          <button type="button" data-action="minus" aria-label="减少 ${escapeHtml(card.name)}">−</button>
+          <small>上限 ${limit}</small>
+        </div>
+      </div>`;
+  }
+
+  function refreshDeckUI() {
+    const total = totalDeckCount();
+    $("deckTotal").textContent = total;
+    $("deckTotal").classList.toggle("bad", total !== DECK_SIZE);
+    $("deckNeed").textContent = total === DECK_SIZE
+      ? "卡组已满 · 可以开始"
+      : total < DECK_SIZE
+        ? `还差 ${DECK_SIZE - total} 张`
+        : `超出 ${total - DECK_SIZE} 张`;
+
+    document.querySelectorAll(".deck-row").forEach((row) => {
+      const id = Number(row.dataset.id);
+      const card = CARD_DB.find((item) => item.id === id);
+      if (!card) return;
+      const count = deckCounts[id] || 0;
+      const limit = rarityOf(card).copyLimit;
+      row.classList.toggle("is-included", count > 0);
+      const countEl = row.querySelector(".deck-count");
+      if (countEl) countEl.textContent = String(count);
+      const plus = row.querySelector('[data-action="plus"]');
+      const minus = row.querySelector('[data-action="minus"]');
+      if (plus) plus.disabled = count >= limit || total >= BUILD_MAX;
+      if (minus) minus.disabled = count <= 0;
+    });
+
+    const enough = total === DECK_SIZE;
+    $("startDuelBtn").disabled = !enough;
+    $("startDuelBtn").textContent = enough
+      ? "开始决斗"
+      : total < DECK_SIZE
+        ? `还差 ${DECK_SIZE - total} 张`
+        : `超出 ${total - DECK_SIZE} 张`;
+  }
+
+  function setDeckCount(id, delta) {
+    const card = CARD_DB.find((item) => item.id === id);
+    if (!card) return;
+    const limit = rarityOf(card).copyLimit;
+    const current = deckCounts[id] || 0;
+    const total = totalDeckCount();
+    if (delta > 0) {
+      if (current >= limit || total >= BUILD_MAX) return;
+      deckCounts[id] = current + 1;
+    } else if (delta < 0) {
+      if (current <= 0) return;
+      deckCounts[id] = current - 1;
+    }
+    refreshDeckUI();
+  }
+
+  // ---------- 卡牌渲染 ----------
+
+  function renderCard(card, side) {
+    const hiddenTrap = card.type === "trap" && card.isSetTrap && side === "ai";
+    const revealedTrap = card.type === "trap" && card.isSetTrap && side === "player";
+    const rarity = rarityOf(card);
+
+    if (hiddenTrap) {
+      return `<div class="card rarity-${card.rarity} trap set-card hidden-set" data-uid="${card.uid}" title="盖放的陷阱卡">
+        <div class="set-seal">◈</div>
+        <div class="set-label">盖放</div>
+      </div>`;
+    }
+
+    const classes = ["card", `rarity-${card.rarity}`, card.type];
+    if (card.attacked && state.turn === side) classes.push("attacked");
+    if (card.defenseMode) classes.push("def-mode");
+    if (side === "player" && state.selectedAttacker === card.uid) classes.push("selected");
+    if (side === "ai" && state.selectedAttacker !== null && isMonster(card) && canPlayerAct() && !state.pendingSummon && !state.returnMode) classes.push("targetable");
+    if (revealedTrap) classes.push("set-card", "revealed");
+    if (side === "player" && state.pendingSummon) {
+      if (state.pendingSummon.selected.includes(card.uid)) classes.push("tribute-selected");
+      else if (isTributeEligible(card)) classes.push("tribute-target");
+    }
+    if (side === "player" && state.returnMode && canReturnMonster(card)) classes.push("return-target");
+
+    const kind = isMonster(card) ? card.race : card.type === "spell" ? "法术" : (card.isSetTrap ? "盖放" : "陷阱");
+    const rarityBadge = `<span class="card-badge rarity-${card.rarity}">${rarity.label}</span>`;
+    const sevenBadge = card.isSevenHall ? '<span class="card-badge seven">七殿</span>' : "";
+    const costBadge = getTributeRequirement(card) ? `<span class="card-badge cost" title="${escapeHtml(getTributeRequirement(card).label)}">${tributeBadge(card)}</span>` : "";
+    const newTag = isMonster(card) && card.summonThisTurn && state.turn === side ? '<span class="new-tag">新</span>' : "";
+    const title = `${card.desc}${getTributeRequirement(card) ? " 召唤条件：" + getTributeRequirement(card).label : ""}`;
+
+    if (isMonster(card)) {
+      return `<div class="${classes.join(" ")}" data-uid="${card.uid}" title="${escapeHtml(title)}">
+        <div class="card-head"><span class="card-kind">${kind}</span><span class="card-badges">${rarityBadge}${sevenBadge}${costBadge}${newTag}</span></div>
+        <div class="card-name">${escapeHtml(card.name)}</div>
+        <div class="card-desc">${escapeHtml(card.desc)}</div>
+        <div class="card-foot">
+          <span class="mode-tag ${card.defenseMode ? "def" : "atk"}">${card.defenseMode ? "守" : "攻"}</span>
+          <span class="card-atkdef"><span>攻击 ${card.atk}</span><span>防御 ${card.def}</span></span>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="${classes.join(" ")}" data-uid="${card.uid}" title="${escapeHtml(title)}">
+      <div class="card-head"><span class="card-kind">${kind}</span><span class="card-badges">${rarityBadge}${sevenBadge}${costBadge}</span></div>
+      <div class="card-name">${escapeHtml(card.name)}</div>
+      <div class="card-desc">${escapeHtml(card.desc)}</div>
+      <div class="card-foot">
+        <span class="mode-tag ${card.type === "trap" ? "trap" : "spell"}">${revealedTrap ? "盖放" : card.type === "trap" ? "陷阱" : "法术"}</span>
+        <span class="card-atkdef">${card.lpCost ? `LP -${card.lpCost}` : ""}</span>
+      </div>
+    </div>`;
+  }
+
+  function renderField(field, side) {
+    let html = field.map((card) => renderCard(card, side)).join("");
+    for (let i = field.length; i < MAX_FIELD; i++) html += `<div class="slot" aria-hidden="true">${i + 1}</div>`;
+    return html;
+  }
+
+  function renderAll() {
+    if (state.pendingSummon) {
+      const card = state.playerHand.find((item) => item.uid === state.pendingSummon.cardUid);
+      if (!card) {
+        state.pendingSummon = null;
+      } else {
+        state.pendingSummon.selected = state.pendingSummon.selected.filter((uid) =>
+          state.playerField.some((item) => item.uid === uid && isMonster(item))
+        );
+      }
+    }
+
+    if (state.selectedAttacker !== null) {
+      const selected = state.playerField.find((card) => card.uid === state.selectedAttacker);
+      if (!selected || !canAttack(selected)) {
+        state.selectedAttacker = null;
+        state.tip = DEFAULT_TIP;
+      }
+    }
+    if (state.returnMode && (!canPlayerAct() || state.returnUsed || !state.playerField.some(canReturnMonster))) {
+      state.returnMode = false;
+    }
+
+    const playerHp = Math.max(0, state.playerHp);
+    const aiHp = Math.max(0, state.aiHp);
+    $("playerHp").textContent = playerHp;
+    $("aiHp").textContent = aiHp;
+    $("playerHpBar").style.width = `${Math.min(100, (playerHp / MAX_HP) * 100)}%`;
+    $("aiHpBar").style.width = `${Math.min(100, (aiHp / MAX_HP) * 100)}%`;
+    $("playerHpBar").classList.toggle("low", playerHp <= MAX_HP * 0.25);
+    $("aiHpBar").classList.toggle("low", aiHp <= MAX_HP * 0.25);
+    $("playerDeckInfo").textContent = `卡组 ${state.playerDeck.length} · 手牌 ${state.playerHand.length}`;
+    $("aiDeckInfo").textContent = `卡组 ${state.aiDeck.length} · 手牌 ${state.aiHand.length}`;
+    $("turnBadge").textContent = state.gameOver ? "决斗结束" : state.turn === "player" ? "你的回合" : "对手回合";
+    $("turnBadge").className = `turn-badge${state.turn === "ai" && !state.gameOver ? " ai" : ""}`;
+    $("turnCount").textContent = `第 ${state.turnNo} 回合${redLocked() && !state.gameOver ? " · 红卡封印" : ""}`;
+    $("aiFieldCount").textContent = `${state.aiField.length} / ${MAX_FIELD}`;
+    $("playerFieldCount").textContent = `${state.playerField.length} / ${MAX_FIELD}`;
+    $("handCount").textContent = String(state.playerHand.length);
+    $("gyCount").textContent = String(state.graveyard.length);
+    $("gyList").textContent = state.graveyard.length ? state.graveyard.map((card) => card.name).join(" · ") : "空";
+    $("gyList").title = state.graveyard.map((card) => card.name).join("、");
+
+    $("aiField").innerHTML = renderField(state.aiField, "ai");
+    $("playerField").innerHTML = renderField(state.playerField, "player");
+    $("playerHand").innerHTML = state.playerHand.length
+      ? state.playerHand.map((card) => renderCard(card, "player")).join("")
+      : '<div class="empty-hand">手牌为空</div>';
+
+    document.querySelectorAll("#playerHand .card").forEach((element) => {
+      element.addEventListener("click", () => onHandCard(Number(element.dataset.uid)));
+    });
+    document.querySelectorAll("#playerField .card").forEach((element) => {
+      element.addEventListener("click", () => onPlayerFieldCard(Number(element.dataset.uid)));
+    });
+    document.querySelectorAll("#aiField .card").forEach((element) => {
+      element.addEventListener("click", () => onAiFieldCard(Number(element.dataset.uid)));
+    });
+
+    const acting = canPlayerAct();
+    const pending = Boolean(state.pendingSummon);
+    const aiHasMonsters = monstersOf(state.aiField).length > 0;
+    const returnable = state.playerField.some(canReturnMonster);
+    $("endTurnBtn").disabled = !acting || pending;
+    $("directAttackBtn").disabled = !acting || pending || state.returnMode || state.selectedAttacker === null || aiHasMonsters;
+    $("returnMonsterBtn").disabled = !acting || pending || state.returnUsed || !returnable;
+    $("returnMonsterBtn").textContent = state.returnMode ? "取消收回" : "收回怪兽";
+    $("cancelSelectBtn").disabled = !acting || (!pending && !state.returnMode && state.selectedAttacker === null);
+    $("cancelSelectBtn").textContent = state.returnMode ? "取消收回" : pending ? "取消献祭" : "取消选择";
+    $("aiLife").classList.toggle("attackable", acting && !pending && !state.returnMode && state.selectedAttacker !== null && !aiHasMonsters);
+    $("attackTip").textContent = state.tip;
+    renderLog();
+    scheduleBroadcast();
+  }
+
+  // ---------- 献祭召唤 ----------
+
+  function eligibleTributesFor(side, rarities) {
+    return monstersOf(fieldOf(side)).filter((card) => rarities.includes(card.rarity));
+  }
+
+  function canSelectTribute(card) {
+    if (!state.pendingSummon) return false;
+    if (!isMonster(card)) return false;
+    if (state.pendingSummon.selected.includes(card.uid)) return true;
+    const pendingCard = state.playerHand.find((item) => item.uid === state.pendingSummon.cardUid);
+    if (!pendingCard) return false;
+    const req = getTributeRequirement(pendingCard);
+    if (!req) return false;
+    const selectedCards = state.pendingSummon.selected
+      .map((uid) => state.playerField.find((item) => item.uid === uid))
+      .filter(Boolean);
+    return req.options.some((option) => {
+      if (state.pendingSummon.selected.length + 1 > option.count) return false;
+      return [...selectedCards, card].every((item) => option.rarities.includes(item.rarity));
+    });
+  }
+
+  function isTributeEligible(card) {
+    if (!state.pendingSummon) return false;
+    if (!isMonster(card)) return false;
+    return canSelectTribute(card);
+  }
+
+  function beginPlayerTribute(card) {
+    const req = getTributeRequirement(card);
+    if (!req) {
+      summonMonster(card, "player", []);
+      return;
+    }
+    if (redCardBlocked(card)) {
+      log(`红卡【${card.name}】在前三回合处于封印状态，第4回合起才能使用。`, "system");
+      setTip("红卡在前 3 回合封印，第 4 回合起解禁。");
+      renderAll();
+      return;
+    }
+    if (state.highSummonUsed) {
+      log("本回合已经进行过高阶召唤，不能再召唤紫/黑/红怪兽。", "system");
+      setTip("每回合只能进行 1 次高阶召唤，本回合已经用过了。");
+      renderAll();
+      return;
+    }
+    const hasMaterials = req.options.some((option) => eligibleTributesFor("player", option.rarities).length >= option.count);
+    if (!hasMaterials) {
+      log(`【${card.name}】需要${req.label}，当前场上没有足够祭品。`, "system");
+      setTip(`无法召唤【${card.name}】：需要${req.label}。`);
+      renderAll();
+      return;
+    }
+    state.selectedAttacker = null;
+    state.pendingSummon = { cardUid: card.uid, cardId: card.id, selected: [] };
+    setTip(`献祭召唤【${card.name}】：${req.label}。点击自己场上符合条件的怪兽，选够后自动召唤。`);
+    renderAll();
+  }
+
+  function handleTributeClick(uid) {
+    if (!state.pendingSummon) return;
+    const card = state.playerField.find((item) => item.uid === uid && isMonster(item));
+    if (!card) {
+      setTip("只能选择自己场上的怪兽作为祭品。");
+      renderAll();
+      return;
+    }
+    if (state.pendingSummon.selected.includes(uid)) {
+      state.pendingSummon.selected = state.pendingSummon.selected.filter((item) => item !== uid);
+      const pendingCard = state.playerHand.find((item) => item.uid === state.pendingSummon.cardUid);
+      const req = pendingCard ? getTributeRequirement(pendingCard) : null;
+      setTip(req
+        ? `已选择 ${state.pendingSummon.selected.length} 张祭品。${req.label}。`
+        : DEFAULT_TIP);
+      renderAll();
+      return;
+    }
+    if (!canSelectTribute(card)) {
+      const pendingCard = state.playerHand.find((item) => item.uid === state.pendingSummon.cardUid);
+      const req = pendingCard ? getTributeRequirement(pendingCard) : null;
+      setTip(`这张卡不符合当前献祭条件。${req ? req.label + "。" : ""}`);
+      renderAll();
+      return;
+    }
+
+    state.pendingSummon.selected.push(uid);
+    const pendingCard = state.playerHand.find((item) => item.uid === state.pendingSummon.cardUid);
+    if (!pendingCard) {
+      state.pendingSummon = null;
+      renderAll();
+      return;
+    }
+    const req = getTributeRequirement(pendingCard);
+    const selectedCards = state.pendingSummon.selected
+      .map((item) => state.playerField.find((fieldCard) => fieldCard.uid === item))
+      .filter(Boolean);
+    const satisfied = req.options.some((option) =>
+      selectedCards.length === option.count && selectedCards.every((item) => option.rarities.includes(item.rarity))
+    );
+
+    if (satisfied) {
+      resolveTributeSummon();
+      return;
+    }
+
+    const option = req.options.find((item) => selectedCards.every((fieldCard) => item.rarities.includes(fieldCard.rarity)));
+    const need = option ? option.count - selectedCards.length : 1;
+    setTip(`献祭召唤【${pendingCard.name}】：已选 ${selectedCards.length} 张，还需 ${need} 张。${req.label}。`);
+    renderAll();
+  }
+
+  function resolveTributeSummon() {
+    const pending = state.pendingSummon;
+    if (!pending) return;
+    const card = state.playerHand.find((item) => item.uid === pending.cardUid);
+    if (!card) {
+      state.pendingSummon = null;
+      renderAll();
+      return;
+    }
+    const tributes = pending.selected
+      .map((uid) => state.playerField.find((item) => item.uid === uid && isMonster(item)))
+      .filter(Boolean);
+    const req = getTributeRequirement(card);
+    const valid = req && req.options.some((option) =>
+      tributes.length === option.count && tributes.every((item) => option.rarities.includes(item.rarity))
+    );
+    if (!valid) {
+      setTip("献祭组合不符合条件，请重新选择。");
+      renderAll();
+      return;
+    }
+    state.pendingSummon = null;
+    if (PVP.role === "guest") {
+      sendGuestAction({ type: "summon", cardUid: card.uid, tributes: tributes.map((item) => item.uid) });
+      setTip("已发送献祭召唤，等待房主结算。");
+      renderAll();
+      return;
+    }
+    summonMonster(card, "player", tributes);
+  }
+
+  function cancelPendingSummon() {
+    if (!state.pendingSummon) return false;
+    state.pendingSummon = null;
+    setTip(DEFAULT_TIP);
+    renderAll();
+    return true;
+  }
+
+  function chooseTributesForAi(card, side) {
+    const req = getTributeRequirement(card);
+    if (!req) return [];
+    const candidates = [];
+    req.options.forEach((option) => {
+      const eligible = eligibleTributesFor(side, option.rarities);
+      if (eligible.length < option.count) return;
+      const chosen = [...eligible]
+        .sort((a, b) => (a.atk + a.def) - (b.atk + b.def))
+        .slice(0, option.count);
+      const score = chosen.reduce((sum, item) => sum + item.atk + item.def, 0);
+      candidates.push({ chosen, score });
+    });
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => a.score - b.score);
+    return candidates[0].chosen;
+  }
+
+  // ---------- 召唤 / 效果 ----------
+
+  function summonMonster(card, side, tributes = []) {
+    const field = fieldOf(side);
+    const hand = handOf(side);
+    if (!hand.some((item) => item.uid === card.uid)) return false;
+    if (card.cannotSummonTurn === state.turnNo) {
+      log(`【${card.name}】本回合被收回过，不能再次召唤。`, "system");
+      if (side === "player") setTip("收回手牌的怪兽本回合不能再次召唤。");
+      renderAll();
+      return false;
+    }
+    if (redCardBlocked(card)) {
+      log(`红卡【${card.name}】在前三回合处于封印状态，第4回合起才能使用。`, "system");
+      if (side === "player") setTip("红卡在前 3 回合封印，第 4 回合起解禁。");
+      renderAll();
+      return false;
+    }
+    const needed = getTributeRequirement(card);
+    if (needed && state.highSummonUsed) {
+      log("本回合已经进行过高阶召唤，无法再次召唤。", "system");
+      if (side === "player") setTip("每回合只能进行 1 次高阶召唤。");
+      renderAll();
+      return false;
+    }
+    const validTributes = tributes.filter((item) => field.some((fieldCard) => fieldCard.uid === item.uid && isMonster(fieldCard)));
+    if (needed && !needed.options.some((option) =>
+      validTributes.length === option.count && validTributes.every((item) => option.rarities.includes(item.rarity))
+    )) {
+      log(`【${card.name}】的献祭条件不满足。`, "system");
+      return false;
+    }
+    if (field.length - validTributes.length + 1 > MAX_FIELD) {
+      log("场上位置不足，无法召唤。", "system");
+      if (side === "player") setTip("场上最多 5 个位置。");
+      renderAll();
+      return false;
+    }
+
+    validTributes.forEach((tribute) => {
+      const idx = field.findIndex((item) => item.uid === tribute.uid);
+      if (idx !== -1) {
+        field.splice(idx, 1);
+        state.graveyard.push(tribute);
+        log(`${sideName(side)}献祭了【${tribute.name}】。`, "cost");
+      }
+    });
+
+    const handIndex = hand.findIndex((item) => item.uid === card.uid);
+    if (handIndex === -1) return false;
+    hand.splice(handIndex, 1);
+
+    card.defenseMode = false;
+    card.attacked = false;
+    card.summonThisTurn = true;
+    card.isSetTrap = false;
+    field.push(card);
+    if (needed) state.highSummonUsed = true;
+
+    const tributeText = validTributes.length ? `，献祭 ${validTributes.map((item) => `【${item.name}】`).join("")}` : "";
+    log(`${sideName(side)}召唤了【${card.name}】${tributeText}。`, "summon");
+    if (side === "player") {
+      state.selectedAttacker = null;
+      setTip(`你召唤了【${card.name}】。刚召唤的怪兽本回合不能攻击。`);
+    }
+    triggerSummon(card, side);
+    if (checkWin()) return true;
+    renderAll();
+    return true;
+  }
+
+  function triggerSummon(card, side) {
+    if (!card.summonEffects || !card.summonEffects.length) return;
+    resolveEffects(card.summonEffects, card, side);
+  }
+
+  function resolveEffects(effects, source, side) {
+    (effects || []).forEach((effect) => resolveEffect(effect, source, side));
+  }
+
+  function pickOpponentMonster(side, filter) {
+    const opponent = otherSide(side);
+    const list = monstersOf(fieldOf(opponent)).filter(filter || (() => true));
+    return [...list].sort((a, b) => b.atk - a.atk)[0] || null;
+  }
+
+  function pickCardDamageTarget(side) {
+    const opponent = otherSide(side);
+    const list = monstersOf(fieldOf(opponent));
+    return [...list].sort((a, b) => a.def - b.def || b.atk - a.atk)[0] || null;
+  }
+
+  function applyCardDamage(target, side, amount) {
+    if (!target) return;
+    const before = target.def;
+    const actual = Math.min(before, amount);
+    target.def = Math.max(0, before - amount);
+    log(`【${target.name}】受到 ${actual} 点卡牌伤害，防御力-${actual}。`, "damage");
+    if (target.def <= 0) {
+      destroyMonster(target, side);
+      log(`【${target.name}】防御力归零，被破坏。`, "damage");
+    }
+  }
+
+  function resolveEffect(effect, source, side) {
+    const opponent = otherSide(side);
+    switch (effect.kind) {
+      case "damage": {
+        state[hpKey(opponent)] -= effect.amount;
+        log(`${sideName(opponent)}受到 ${effect.amount} 点效果伤害。`, "damage");
+        break;
+      }
+      case "cardDamageOne": {
+        const target = pickCardDamageTarget(side);
+        if (target) applyCardDamage(target, opponent, effect.amount);
+        break;
+      }
+      case "cardDamageAll": {
+        const targets = monstersOf(fieldOf(opponent));
+        targets.forEach((target) => applyCardDamage(target, opponent, effect.amount));
+        break;
+      }
+      case "heal": {
+        const before = state[hpKey(side)];
+        state[hpKey(side)] = Math.min(MAX_HP, before + effect.amount);
+        const healed = state[hpKey(side)] - before;
+        if (healed > 0) log(`${sideName(side)}恢复了 ${healed} 点生命。`, "good");
+        break;
+      }
+      case "debuffOne": {
+        const target = pickOpponentMonster(side);
+        if (target) {
+          target.atk = Math.max(0, target.atk - effect.amount);
+          log(`【${target.name}】攻击力-${effect.amount}。`, side === "player" ? "good" : "ai");
+        }
+        break;
+      }
+      case "debuffAll": {
+        const targets = monstersOf(fieldOf(opponent));
+        targets.forEach((target) => { target.atk = Math.max(0, target.atk - effect.amount); });
+        if (targets.length) log(`${sideName(opponent)}全部怪兽攻击力-${effect.amount}。`, side === "player" ? "good" : "ai");
+        break;
+      }
+      case "debuffAllDef": {
+        const targets = monstersOf(fieldOf(opponent));
+        targets.forEach((target) => { target.def = Math.max(0, target.def - effect.amount); });
+        if (targets.length) log(`${sideName(opponent)}全部怪兽防御力-${effect.amount}。`, side === "player" ? "good" : "ai");
+        break;
+      }
+      case "buffSelf": {
+        source.atk += effect.amount;
+        log(`【${source.name}】攻击力+${effect.amount}。`, side === "player" ? "good" : "ai");
+        break;
+      }
+      case "draw": {
+        drawCard(side);
+        break;
+      }
+      case "destroyOne": {
+        const target = pickOpponentMonster(side, (card) => !effect.maxDef || card.def <= effect.maxDef);
+        if (target) {
+          destroyMonster(target, opponent);
+          log(`【${target.name}】被破坏。`, "damage");
+        }
+        break;
+      }
+      case "destroyAll": {
+        const targets = monstersOf(fieldOf(opponent));
+        targets.forEach((target) => destroyMonster(target, opponent));
+        if (targets.length) log(`${sideName(opponent)}场上 ${targets.length} 只怪兽被破坏。`, "damage");
+        break;
+      }
+      case "search": {
+        searchCard(side, effect);
+        break;
+      }
+      case "damageOpponent": {
+        state[hpKey(opponent)] -= effect.amount;
+        log(`【${source.name}】给予${sideName(opponent)} ${effect.amount} 点伤害。`, "damage");
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  function searchCard(side, effect) {
+    const deck = deckOf(side);
+    const index = deck.findIndex((card) => {
+      if (effect.races && !effect.races.includes(card.race)) return false;
+      if (effect.type && card.type !== effect.type) return false;
+      return true;
+    });
+    if (index === -1) {
+      log(`${sideName(side)}的卡组中没有可检索的卡。`, "system");
+      return null;
+    }
+    const [card] = deck.splice(index, 1);
+    handOf(side).push(card);
+    log(`${sideName(side)}检索了【${card.name}】。`, side === "player" ? "good" : "ai");
+    return card;
+  }
+
+  // ---------- 法术 ----------
+
+  function effectUsable(effect, side) {
+    const opponent = otherSide(side);
+    switch (effect.kind) {
+      case "damage":
+      case "damageOpponent":
+        return true;
+      case "heal":
+        return state[hpKey(side)] < MAX_HP;
+      case "draw":
+        return deckOf(side).length > 0;
+      case "destroyOne":
+        return monstersOf(fieldOf(opponent)).some((card) => !effect.maxDef || card.def <= effect.maxDef);
+      case "destroyAll":
+      case "debuffAll":
+      case "debuffAllDef":
+      case "cardDamageOne":
+      case "cardDamageAll":
+        return monstersOf(fieldOf(opponent)).length > 0;
+      case "search":
+        return deckOf(side).some((card) => {
+          if (effect.races && !effect.races.includes(card.race)) return false;
+          if (effect.type && card.type !== effect.type) return false;
+          return true;
+        });
+      default:
+        return true;
+    }
+  }
+
+  function spellCanUse(card, side, forAi) {
+    if (card.type !== "spell") return false;
+    if (redCardBlocked(card)) return false;
+    const hp = state[hpKey(side)];
+    if (card.lpCost) {
+      if (forAi ? hp <= card.lpCost + 300 : hp < card.lpCost) return false;
+    }
+    if (card.requiresSeven && countSeven(fieldOf(side)) < card.requiresSeven) return false;
+    return (card.spellEffects || []).some((effect) => effectUsable(effect, side));
+  }
+
+  function activateSpell(card, side) {
+    const hand = handOf(side);
+    if (!hand.some((item) => item.uid === card.uid)) return false;
+    if (redCardBlocked(card)) {
+      log(`红卡【${card.name}】在前三回合处于封印状态，第4回合起才能使用。`, "system");
+      if (side === "player") setTip("红卡在前 3 回合封印，第 4 回合起解禁。");
+      renderAll();
+      return false;
+    }
+    if (!spellCanUse(card, side, side === "ai")) {
+      if (side === "player") {
+        log(`【${card.name}】当前无法发动。`, "system");
+        setTip(`【${card.name}】当前没有合法目标或生命值不足。`);
+        renderAll();
+      }
+      return false;
+    }
+
+    const hp = state[hpKey(side)];
+    if (card.lpCost) {
+      state[hpKey(side)] -= card.lpCost;
+      log(`${sideName(side)}支付了 ${card.lpCost} 点生命作为代价。`, "cost");
+    }
+
+    const index = hand.findIndex((item) => item.uid === card.uid);
+    hand.splice(index, 1);
+    state.graveyard.push(card);
+    log(`${sideName(side)}发动了【${card.name}】。`, side === "player" ? "player" : "ai");
+    resolveEffects(card.spellEffects, card, side);
+
+    if (side === "player") {
+      state.selectedAttacker = null;
+      setTip(DEFAULT_TIP);
+    }
+    if (checkWin()) return true;
+    renderAll();
+    return true;
+  }
+
+  // ---------- 陷阱 ----------
+
+  function setTrap(card, side) {
+    const field = fieldOf(side);
+    if (field.length >= MAX_FIELD) {
+      log(`${sideName(side)}的场上已满，无法盖放陷阱。`, "system");
+      if (side === "player") setTip("场上最多 5 个位置，怪兽与盖放陷阱共用。");
+      renderAll();
+      return false;
+    }
+    if (redCardBlocked(card)) {
+      log(`红卡【${card.name}】在前三回合处于封印状态，第4回合起才能使用。`, "system");
+      if (side === "player") setTip("红卡在前 3 回合封印，第 4 回合起解禁。");
+      renderAll();
+      return false;
+    }
+    const hand = handOf(side);
+    const index = hand.findIndex((item) => item.uid === card.uid);
+    if (index === -1) return false;
+    hand.splice(index, 1);
+    card.isSetTrap = true;
+    field.push(card);
+    log(side === "player" ? "房主盖放了一张陷阱卡。" : "玩家2盖放了一张陷阱卡。", side);
+    if (side === "player") {
+      state.selectedAttacker = null;
+      setTip(`你盖放了【${card.name}】。陷阱会在满足条件时自动发动。`);
+    }
+    renderAll();
+    return true;
+  }
+
+  function takeSetTrap(side, trigger) {
+    const field = fieldOf(side);
+    const index = field.findIndex((card) => card.type === "trap" && card.isSetTrap && card.trapTrigger === trigger);
+    if (index === -1) return null;
+    const [trap] = field.splice(index, 1);
+    trap.isSetTrap = false;
+    state.graveyard.push(trap);
+    return trap;
+  }
+
+  function tryAttackTrap(defSide, attacker, atkSide) {
+    const trap = takeSetTrap(defSide, "attack");
+    if (!trap) return false;
+    log(`${sideName(defSide)}的陷阱【${trap.name}】发动！`, defSide === "player" ? "good" : "ai");
+    let canceled = false;
+
+    (trap.trapEffects || []).forEach((effect) => {
+      if (effect.kind === "destroyAttacker") {
+        if (destroyMonster(attacker, atkSide)) {
+          canceled = true;
+          log(`【${attacker.name}】被破坏，攻击取消。`, "damage");
+        }
+      } else if (effect.kind === "negateAttack") {
+        canceled = true;
+        log("攻击被取消。", "system");
+      } else if (effect.kind === "debuffAttacker") {
+        if (fieldOf(atkSide).some((card) => card.uid === attacker.uid)) {
+          attacker.atk = Math.max(0, attacker.atk - effect.amount);
+          log(`【${attacker.name}】攻击力-${effect.amount}。`, "damage");
+        }
+      } else if (effect.kind === "damageOpponent") {
+        state[hpKey(atkSide)] -= effect.amount;
+        log(`【${trap.name}】给予${sideName(atkSide)} ${effect.amount} 点伤害。`, "damage");
+      }
+    });
+
+    return canceled;
+  }
+
+  function tryDamageTrap(damagedSide) {
+    const trap = takeSetTrap(damagedSide, "damage");
+    if (!trap) return false;
+    log(`${sideName(damagedSide)}的陷阱【${trap.name}】发动！`, damagedSide === "player" ? "good" : "ai");
+    const enemy = otherSide(damagedSide);
+    (trap.trapEffects || []).forEach((effect) => {
+      if (effect.kind === "reflect") {
+        state[hpKey(enemy)] -= effect.amount;
+        log(`反弹 ${effect.amount} 点伤害给${sideName(enemy)}。`, "damage");
+      } else if (effect.kind === "heal") {
+        const before = state[hpKey(damagedSide)];
+        state[hpKey(damagedSide)] = Math.min(MAX_HP, before + effect.amount);
+        const healed = state[hpKey(damagedSide)] - before;
+        if (healed > 0) log(`${sideName(damagedSide)}恢复了 ${healed} 点生命。`, "good");
+      }
+    });
+    return true;
+  }
+
+  // ---------- 战斗 ----------
+
+  function destroyMonster(card, side) {
+    if (!card) return false;
+    const field = fieldOf(side);
+    const index = field.findIndex((item) => item.uid === card.uid && isMonster(item));
+    if (index === -1) return false;
+    field.splice(index, 1);
+    state.graveyard.push(card);
+    return true;
+  }
+
+  function triggerBattleDestroy(source, side) {
+    if (!source.onBattleDestroy || !source.onBattleDestroy.length) return;
+    resolveEffects(source.onBattleDestroy, source, side);
+  }
+
+  function triggerBattleDamage(side) {
+    monstersOf(fieldOf(side)).forEach((card) => {
+      if (card.onBattleDamage && card.onBattleDamage.length) {
+        resolveEffects(card.onBattleDamage, card, side);
+      }
+    });
+  }
+
+  function applyBattleDamage(side, amount) {
+    if (amount <= 0) return;
+    state[hpKey(side)] -= amount;
+    log(`${sideName(side)}受到 ${amount} 点战斗伤害。`, "damage");
+    tryDamageTrap(side);
+    triggerBattleDamage(side);
+  }
+
+  function performAttack(atkSide, attacker, targetUid) {
+    if (state.gameOver) return;
+    const defSide = otherSide(atkSide);
+    const atkField = fieldOf(atkSide);
+    const defField = fieldOf(defSide);
+    const liveAttacker = atkField.find((card) => card.uid === attacker.uid && isMonster(card));
+    if (!liveAttacker) {
+      log("攻击者已经不在场上。", "system");
+      if (atkSide === "player") {
+        state.selectedAttacker = null;
+        setTip(DEFAULT_TIP);
+      }
+      renderAll();
+      return;
+    }
+
+    const defenderMonsters = monstersOf(defField);
+    let target = null;
+    if (targetUid === null) {
+      if (defenderMonsters.length > 0) {
+        log("对手场上还有怪兽，不能直接攻击。", "system");
+        if (atkSide === "player") setTip("对手场上还有怪兽，请先选择一只怪兽作为攻击目标。");
+        renderAll();
+        return;
+      }
+    } else {
+      target = defField.find((card) => card.uid === targetUid && isMonster(card));
+      if (!target) {
+        log("攻击目标已经不在场上。", "system");
+        if (atkSide === "player") {
+          state.selectedAttacker = null;
+          setTip(DEFAULT_TIP);
+        }
+        renderAll();
+        return;
+      }
+    }
+
+    liveAttacker.attacked = true;
+    if (atkSide === "player") {
+      state.selectedAttacker = null;
+      setTip(DEFAULT_TIP);
+    }
+    log(`\n⚔ ${sideName(atkSide)}的【${liveAttacker.name}】发起攻击！`, atkSide);
+
+    const canceled = tryAttackTrap(defSide, liveAttacker, atkSide);
+    if (checkWin()) return;
+    if (canceled) {
+      renderAll();
+      return;
+    }
+
+    if (targetUid === null) {
+      log(`${liveAttacker.name} 直接攻击${sideName(defSide)}。`, "damage");
+      applyBattleDamage(defSide, liveAttacker.atk);
+      if (!checkWin()) renderAll();
+      return;
+    }
+
+    const targetValue = target.defenseMode ? target.def : target.atk;
+    log(`${liveAttacker.name} 攻击 ${liveAttacker.atk} VS ${target.name} ${target.defenseMode ? "防御" : "攻击"} ${targetValue}`, atkSide);
+
+    if (!target.defenseMode) {
+      if (liveAttacker.atk > target.atk) {
+        const damage = liveAttacker.atk - target.atk;
+        destroyMonster(target, defSide);
+        log(`击破【${target.name}】。`, "damage");
+        triggerBattleDestroy(liveAttacker, atkSide);
+        applyBattleDamage(defSide, damage);
+      } else if (liveAttacker.atk < target.atk) {
+        const damage = target.atk - liveAttacker.atk;
+        destroyMonster(liveAttacker, atkSide);
+        target.def = Math.max(0, target.def - damage);
+        log(`【${liveAttacker.name}】被破坏，【${target.name}】防御力-${damage}，不扣玩家生命。`, "damage");
+        if (target.def <= 0) {
+          destroyMonster(target, defSide);
+          log(`【${target.name}】防御归零，被破坏。`, "damage");
+        }
+      } else {
+        destroyMonster(liveAttacker, atkSide);
+        destroyMonster(target, defSide);
+        log("双方怪兽同归于尽，没有战斗伤害。", "system");
+      }
+    } else {
+      if (liveAttacker.atk > target.def) {
+        const damage = liveAttacker.atk - target.def;
+        destroyMonster(target, defSide);
+        log(`击破守备怪兽【${target.name}】。`, "good");
+        triggerBattleDestroy(liveAttacker, atkSide);
+        if (liveAttacker.pierce) {
+          log("贯穿效果发动，追加战斗伤害。", "damage");
+          applyBattleDamage(defSide, damage);
+        }
+      } else if (liveAttacker.atk < target.def) {
+        const damage = target.def - liveAttacker.atk;
+        destroyMonster(liveAttacker, atkSide);
+        target.def = Math.max(0, target.def - damage);
+        log(`【${liveAttacker.name}】被破坏，【${target.name}】防御力-${damage}，不扣玩家生命。`, "damage");
+        if (target.def <= 0) {
+          destroyMonster(target, defSide);
+          log(`【${target.name}】防御归零，被破坏。`, "damage");
+        }
+      } else {
+        log("攻击力与防御力相同，双方无事发生。", "system");
+      }
+    }
+
+    if (!checkWin()) renderAll();
+  }
+
+  function chooseAiAttack(attacker) {
+    const targets = monstersOf(state.playerField);
+    if (!targets.length) return { target: null, skip: false };
+
+    let best = null;
+    let bestScore = -Infinity;
+    targets.forEach((target) => {
+      let score;
+      if (target.defenseMode) {
+        if (attacker.atk > target.def) {
+          score = 620 + target.def / 10 + (attacker.pierce ? (attacker.atk - target.def) / 2 : 0);
+        } else if (attacker.atk === target.def) {
+          score = 80;
+        } else {
+          score = -700 - (target.def - attacker.atk);
+        }
+      } else {
+        if (attacker.atk > target.atk) {
+          score = 800 + (attacker.atk - target.atk) + target.atk / 10;
+        } else if (attacker.atk === target.atk) {
+          score = 150;
+        } else {
+          score = -800 + (attacker.atk - target.atk);
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = target;
+      }
+    });
+
+    if (bestScore < 0) return { target: null, skip: true };
+    return { target: best, skip: false };
+  }
+
+  // ---------- 抽卡与回合 ----------
+
+  function drawRaw(side) {
+    const deck = deckOf(side);
+    if (!deck.length) return null;
+    let index = 0;
+    if (redLocked()) {
+      const nonRedIndex = deck.findIndex((card) => card.rarity !== "red");
+      if (nonRedIndex !== -1) index = nonRedIndex;
+    }
+    const [card] = deck.splice(index, 1);
+    handOf(side).push(card);
+    return card;
+  }
+
+  function drawCard(side) {
+    const card = drawRaw(side);
+    if (!card) {
+      log(`${sideName(side)}的卡组已空，无法抽卡。`, "system");
+      return null;
+    }
+    log(`${sideName(side)}抽了 1 张卡。`, side);
+    return card;
+  }
+
+  function drawCards(side, count) {
+    for (let i = 0; i < count; i++) drawCard(side);
+  }
+
+  function startDuel(counts) {
+    const definitions = [];
+    CARD_DB.forEach((card) => {
+      const count = counts[card.id] || 0;
+      for (let i = 0; i < count; i++) definitions.push(card);
+    });
+    if (definitions.length !== DECK_SIZE) return;
+
+    state.flowToken++;
+    uidCounter = 1;
+    state = createState();
+    state.phase = "player";
+    state.busy = false;
+    state.playerDeck = shuffle(definitions.map((definition) => makeCard(definition, "player")));
+    state.aiDeck = shuffle(definitions.map((definition) => makeCard(definition, "ai")));
+
+    for (let i = 0; i < START_HAND; i++) {
+      drawRaw("player");
+      drawRaw("ai");
+    }
+
+    $("setupPanel").classList.add("hidden");
+    $("duelArea").classList.remove("hidden");
+    $("resultOverlay").classList.add("hidden");
+
+    state.log = [];
+    PVP.active = true;
+    log("好友约战开始。双方起手 5 张；房主首回合抽 2 张。", "system");
+    log("红卡在前三回合封印，第4回合起解禁。", "system");
+    log(`>>> 房主回合 · 第 ${state.turnNo} 回合`, "player");
+    drawCards("player", DRAW_PER_TURN);
+    setTip(DEFAULT_TIP);
+    renderAll();
+    broadcastState();
+  }
+
+  function onHandCard(uid) {
+    if (!canPlayerAct()) return;
+    if (state.pendingSummon) {
+      setTip("请先完成献祭，或点击“取消献祭”。");
+      renderAll();
+      return;
+    }
+    if (state.returnMode) {
+      setTip("请先点击自己场上的怪兽收回，或取消收回。");
+      renderAll();
+      return;
+    }
+    const card = state.playerHand.find((item) => item.uid === uid);
+    if (!card) return;
+    if (card.cannotSummonTurn === state.turnNo) {
+      setTip("这只怪兽本回合被收回过，不能再次召唤。");
+      renderAll();
+      return;
+    }
+    if (redCardBlocked(card)) {
+      log(`红卡【${card.name}】在前三回合处于封印状态，第4回合起才能使用。`, "system");
+      setTip("红卡在前 3 回合封印，第 4 回合起解禁。");
+      renderAll();
+      return;
+    }
+    if (PVP.role === "guest") {
+      state.selectedAttacker = null;
+      if (card.type === "monster") {
+        if (getTributeRequirement(card)) {
+          beginPlayerTribute(card);
+        } else {
+          sendGuestAction({ type: "summon", cardUid: card.uid, tributes: [] });
+          setTip("已发送召唤，等待房主结算。");
+          renderAll();
+        }
+      } else if (card.type === "trap") {
+        sendGuestAction({ type: "setTrap", cardUid: card.uid });
+        setTip("已发送盖放，等待房主结算。");
+        renderAll();
+      } else {
+        sendGuestAction({ type: "spell", cardUid: card.uid });
+        setTip("已发送法术，等待房主结算。");
+        renderAll();
+      }
+      return;
+    }
+    state.selectedAttacker = null;
+    if (card.type === "monster") {
+      if (getTributeRequirement(card)) beginPlayerTribute(card);
+      else summonMonster(card, "player", []);
+    } else if (card.type === "trap") {
+      setTrap(card, "player");
+    } else {
+      activateSpell(card, "player");
+    }
+  }
+
+  function onPlayerFieldCard(uid) {
+    if (!canPlayerAct()) return;
+    if (state.pendingSummon) {
+      handleTributeClick(uid);
+      return;
+    }
+    const card = state.playerField.find((item) => item.uid === uid);
+    if (!card) return;
+
+    if (state.returnMode) {
+      if (!canReturnMonster(card)) {
+        setTip("只能收回未被攻击过的怪兽。");
+        renderAll();
+        return;
+      }
+      if (PVP.role === "guest") {
+        sendGuestAction({ type: "return", cardUid: card.uid });
+        state.returnMode = false;
+        state.selectedAttacker = null;
+        setTip("已发送收回，等待房主结算。");
+        renderAll();
+        return;
+      }
+      returnMonster(card, "player");
+      return;
+    }
+
+    if (PVP.role === "guest") {
+      if (card.type === "trap") {
+        state.selectedAttacker = null;
+        setTip("盖放的陷阱会在满足条件时自动发动。");
+        renderAll();
+        return;
+      }
+      if (state.selectedAttacker === uid) {
+        sendGuestAction({ type: "toggle", cardUid: uid });
+        state.selectedAttacker = null;
+        setTip("已发送表示形式切换，等待房主结算。");
+        renderAll();
+        return;
+      }
+      if (canAttack(card)) {
+        state.selectedAttacker = uid;
+        setTip(`已选择【${card.name}】作为攻击者。点击对手怪兽，或在对手无怪兽时直接攻击。`);
+        renderAll();
+        return;
+      }
+      state.selectedAttacker = null;
+      sendGuestAction({ type: "toggle", cardUid: uid });
+      setTip("已发送表示形式切换，等待房主结算。");
+      renderAll();
+      return;
+    }
+
+    if (card.type === "trap") {
+      state.selectedAttacker = null;
+      setTip("盖放的陷阱会在满足条件时自动发动。");
+      renderAll();
+      return;
+    }
+
+    if (state.selectedAttacker === uid) {
+      toggleMonsterMode(card);
+      state.selectedAttacker = null;
+      setTip(DEFAULT_TIP);
+      renderAll();
+      return;
+    }
+
+    if (canAttack(card)) {
+      state.selectedAttacker = uid;
+      setTip(`已选择【${card.name}】作为攻击者。点击对手怪兽，或在对手无怪兽时直接攻击。`);
+      renderAll();
+      return;
+    }
+
+    state.selectedAttacker = null;
+    toggleMonsterMode(card);
+    setTip(DEFAULT_TIP);
+    renderAll();
+  }
+
+  function onAiFieldCard(uid) {
+    if (!canPlayerAct()) return;
+    if (state.pendingSummon) {
+      setTip("请先完成献祭，或点击“取消献祭”。");
+      renderAll();
+      return;
+    }
+    if (state.returnMode) {
+      setTip("收回模式下只能选择自己场上的怪兽。");
+      renderAll();
+      return;
+    }
+    if (state.selectedAttacker === null) {
+      setTip("你还没有选择攻击者，请先点击自己场上的攻击表示怪兽。");
+      renderAll();
+      return;
+    }
+    const target = state.aiField.find((card) => card.uid === uid);
+    if (!target || !isMonster(target)) {
+      setTip("只能选择对手的怪兽作为攻击目标。");
+      renderAll();
+      return;
+    }
+    if (PVP.role === "guest") {
+      sendGuestAction({ type: "attack", attackerUid: state.selectedAttacker, targetUid: target.uid });
+      state.selectedAttacker = null;
+      setTip("已发送攻击，等待房主结算。");
+      renderAll();
+      return;
+    }
+    const attacker = state.playerField.find((card) => card.uid === state.selectedAttacker);
+    if (!attacker) {
+      state.selectedAttacker = null;
+      setTip(DEFAULT_TIP);
+      renderAll();
+      return;
+    }
+    performAttack("player", attacker, target.uid);
+  }
+
+  function toggleMonsterMode(card) {
+    if (!isMonster(card)) return;
+    card.defenseMode = !card.defenseMode;
+    log(`${sideName(card.owner)}将【${card.name}】切换为${card.defenseMode ? "守备" : "攻击"}表示。`, card.owner);
+  }
+
+  function endPlayerTurn() {
+    if (!canPlayerAct()) return;
+    if (state.pendingSummon) {
+      setTip("请先完成献祭，或点击“取消献祭”。");
+      renderAll();
+      return;
+    }
+    state.selectedAttacker = null;
+    state.returnMode = false;
+    if (PVP.role === "guest") {
+      sendGuestAction({ type: "endTurn" });
+      setTip("已结束回合，等待房主结算。");
+      renderAll();
+      return;
+    }
+    endHostTurnPvp();
+  }
+
+  function endHostTurnPvp() {
+    state.busy = false;
+    state.turn = "ai";
+    state.phase = "ai";
+    state.highSummonUsed = false;
+    state.selectedAttacker = null;
+    state.returnMode = false;
+    state.returnUsed = false;
+    state.tip = "等待对手行动……";
+    resetTurnFlags("ai");
+    log("\n>>> 玩家2回合开始。", "ai");
+    drawCards("ai", DRAW_PER_TURN);
+    if (!checkWin()) {
+      renderAll();
+      broadcastState();
+    }
+  }
+
+  function beginHostTurnFromGuest() {
+    state.turn = "player";
+    state.phase = "player";
+    state.busy = false;
+    state.turnNo++;
+    state.highSummonUsed = false;
+    state.selectedAttacker = null;
+    state.pendingSummon = null;
+    state.returnMode = false;
+    state.returnUsed = false;
+    state.tip = DEFAULT_TIP;
+    resetTurnFlags("player");
+    log(`\n>>> 房主回合 · 第 ${state.turnNo} 回合`, "player");
+    if (state.turnNo === 4) log("红卡解禁，第4回合起可以正常抽到并使用红卡。", "system");
+    drawCards("player", DRAW_PER_TURN);
+    if (!checkWin()) {
+      renderAll();
+      broadcastState();
+    }
+  }
+
+  function alive(token) {
+    return token === state.flowToken && !state.gameOver && state.phase === "ai";
+  }
+
+  async function runAiTurn(token) {
+    await sleep(650);
+    if (!alive(token)) return;
+
+    drawCards("ai", DRAW_PER_TURN);
+    renderAll();
+    await sleep(420);
+    if (!alive(token)) return;
+
+    // 先铺黄/蓝，再以它们为祭品召唤紫/黑/红
+    const lowMonsters = state.aiHand.filter((card) => isMonster(card) && !getTributeRequirement(card));
+    for (const monster of lowMonsters) {
+      if (!alive(token)) return;
+      if (state.aiField.length >= MAX_FIELD) break;
+      if (!state.aiHand.some((card) => card.uid === monster.uid)) continue;
+      await sleep(360);
+      if (!alive(token)) return;
+      summonMonster(monster, "ai", []);
+      if (state.gameOver) return;
+    }
+
+    await sleep(300);
+    if (!alive(token)) return;
+
+    const highMonsters = state.aiHand
+      .filter((card) => isMonster(card) && getTributeRequirement(card) && !(card.rarity === "red" && redLocked()))
+      .sort((a, b) => rarityOf(b).rank - rarityOf(a).rank);
+    for (const monster of highMonsters) {
+      if (!alive(token)) return;
+      if (!state.aiHand.some((card) => card.uid === monster.uid)) continue;
+      const tributes = chooseTributesForAi(monster, "ai");
+      if (!tributes) continue;
+      if (state.aiField.length - tributes.length + 1 > MAX_FIELD) continue;
+      await sleep(440);
+      if (!alive(token)) return;
+      const summoned = summonMonster(monster, "ai", tributes);
+      if (state.gameOver) return;
+      if (summoned) break;
+    }
+
+    await sleep(300);
+    if (!alive(token)) return;
+
+    // 献祭后腾出的位置，再补一次低阶怪兽
+    const remainingLow = state.aiHand.filter((card) => isMonster(card) && !getTributeRequirement(card));
+    for (const monster of remainingLow) {
+      if (!alive(token)) return;
+      if (state.aiField.length >= MAX_FIELD) break;
+      if (!state.aiHand.some((card) => card.uid === monster.uid)) continue;
+      await sleep(320);
+      if (!alive(token)) return;
+      summonMonster(monster, "ai", []);
+      if (state.gameOver) return;
+    }
+
+    await sleep(300);
+    if (!alive(token)) return;
+
+    const trapsInHand = state.aiHand.filter((card) => card.type === "trap");
+    for (const trap of trapsInHand) {
+      if (!alive(token)) return;
+      if (state.aiField.length >= MAX_FIELD) break;
+      if (!state.aiHand.some((card) => card.uid === trap.uid)) continue;
+      await sleep(360);
+      if (!alive(token)) return;
+      setTrap(trap, "ai");
+    }
+
+    await sleep(300);
+    if (!alive(token)) return;
+
+    const spellsInHand = [...state.aiHand.filter((card) => card.type === "spell")];
+    for (const spell of spellsInHand) {
+      if (!alive(token)) return;
+      if (!state.aiHand.some((card) => card.uid === spell.uid)) continue;
+      if (!spellCanUse(spell, "ai", true)) continue;
+      await sleep(480);
+      if (!alive(token)) return;
+      activateSpell(spell, "ai");
+      if (state.gameOver) return;
+    }
+
+    await sleep(420);
+    if (!alive(token)) return;
+
+    const attackers = state.aiField.filter((card) =>
+      isMonster(card) && !card.defenseMode && !card.attacked && !card.summonThisTurn
+    );
+    if (attackers.length) log("\n>>> 对手进入战斗阶段。", "ai");
+
+    for (const attacker of attackers) {
+      if (!alive(token)) return;
+      if (!state.aiField.some((card) => card.uid === attacker.uid)) continue;
+      await sleep(560);
+      if (!alive(token)) return;
+      const choice = chooseAiAttack(attacker);
+      if (choice.skip) {
+        log(`对手的【${attacker.name}】选择按兵不动。`, "ai");
+        continue;
+      }
+      performAttack("ai", attacker, choice.target ? choice.target.uid : null);
+      if (state.gameOver) return;
+      renderAll();
+    }
+
+    await sleep(600);
+    if (!alive(token)) return;
+
+    state.turn = "player";
+    state.phase = "player";
+    state.busy = false;
+    state.turnNo++;
+    state.selectedAttacker = null;
+    state.highSummonUsed = false;
+    resetTurnFlags("player");
+    log(`\n>>> 你的回合 · 第 ${state.turnNo} 回合`, "player");
+    if (state.turnNo === 4) log("红卡解禁，第4回合起可以正常抽到并使用红卡。", "system");
+    drawCards("player", DRAW_PER_TURN);
+    setTip(DEFAULT_TIP);
+    renderAll();
+  }
+
+  // ---------- 胜负 ----------
+
+  function checkWin() {
+    if (state.gameOver) return true;
+    if (state.playerHp <= 0 && state.aiHp <= 0) {
+      endGame("draw", "双方生命值同时归零，时间线在最后一刻断裂。");
+      return true;
+    }
+    if (state.playerHp <= 0) {
+      endGame("lose", "房主的生命值归零，玩家2赢得了这场等级对决。");
+      return true;
+    }
+    if (state.aiHp <= 0) {
+      endGame("win", "玩家2的生命值归零，房主赢得了这场等级对决。");
+      return true;
+    }
+    return false;
+  }
+
+  function endGame(result, reason) {
+    if (state.gameOver) return;
+    state.gameOver = true;
+    state.phase = "over";
+    state.busy = false;
+    state.selectedAttacker = null;
+    state.pendingSummon = null;
+    state.flowToken++;
+    state.result = result;
+    state.resultReason = reason;
+    state.tip = "决斗结束";
+    log(`\n${reason}`, result === "win" ? "good" : result === "lose" ? "damage" : "system");
+    renderAll();
+    broadcastState();
+
+    setTimeout(() => {
+      if (!state.gameOver || state.phase !== "over") return;
+      $("resultTitle").textContent = result === "win" ? "决斗胜利" : result === "lose" ? "决斗败北" : "时间平局";
+      $("resultIcon").textContent = result === "win" ? "✦" : result === "lose" ? "✧" : "∞";
+      $("resultDesc").textContent = reason;
+      $("resultOverlay").classList.remove("hidden");
+    }, 520);
+  }
+
+  function returnToSetup() {
+    state.flowToken++;
+    state.phase = "setup";
+    state.gameOver = true;
+    state.busy = false;
+    state.selectedAttacker = null;
+    state.pendingSummon = null;
+    state.tip = DEFAULT_TIP;
+    PVP.active = false;
+    if (PVP.role === "host" && PVP.code) {
+      sendMessage({ type: "closed", text: "房主已结束本局，等待房主重新开始。" });
+    }
+    $("duelArea").classList.add("hidden");
+    $("setupPanel").classList.remove("hidden");
+    $("resultOverlay").classList.add("hidden");
+    refreshDeckUI();
+  }
+
+  function rematch() {
+    if (totalDeckCountFor(lastDeckCounts) === DECK_SIZE) startDuel(lastDeckCounts);
+    else returnToSetup();
+  }
+
+  function totalDeckCountFor(counts) {
+    return CARD_DB.reduce((sum, card) => sum + (counts[card.id] || 0), 0);
+  }
+
+  // ---------- 房间 / PvP ----------
+
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {})
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "请求失败");
+    return data;
+  }
+
+  function setPvpStatus(text) {
+    const status = $("pvpStatus");
+    if (status) status.textContent = text;
+  }
+
+  function pvpErrorText(error) {
+    const message = (error && error.message) || "未知错误";
+    if (location.protocol === "file:" || message.includes("Failed to fetch") || message === "请求失败") {
+      return "无法连接房间服务。请使用 http://127.0.0.1:8787/pvp.html 打开，或双击“启动好友约战.bat”；不要直接打开 pvp.html 文件。";
+    }
+    return message;
+  }
+
+  function sendMessage(message) {
+    if (!PVP.code || !PVP.token) return;
+    postJson("/api/send", { code: PVP.code, token: PVP.token, message })
+      .catch((error) => setPvpStatus("发送失败：" + pvpErrorText(error)));
+  }
+
+  function sendGuestAction(action) {
+    if (PVP.role !== "guest" || !PVP.active) return;
+    sendMessage({ type: "action", action });
+  }
+
+  function makeGuestState() {
+    const guestResult = state.result === "win" ? "lose" : state.result === "lose" ? "win" : state.result;
+    return {
+      guest: {
+        hp: state.aiHp,
+        hand: state.aiHand,
+        field: state.aiField,
+        deckCount: state.aiDeck.length,
+        highSummonUsed: state.highSummonUsed,
+        returnUsed: state.returnUsed
+      },
+      host: {
+        hp: state.playerHp,
+        handCount: state.playerHand.length,
+        field: state.playerField,
+        deckCount: state.playerDeck.length
+      },
+      turn: state.turn,
+      turnNo: state.turnNo,
+      gameOver: state.gameOver,
+      result: guestResult || null,
+      resultReason: state.resultReason || "",
+      log: state.log,
+      grave: state.graveyard
+    };
+  }
+
+  function broadcastState() {
+    if (PVP.role !== "host" || !PVP.active) return;
+    sendMessage({ type: "state", state: makeGuestState() });
+  }
+
+  function scheduleBroadcast() {
+    if (PVP.role !== "host" || !PVP.active) return;
+    clearTimeout(PVP.broadcastTimer);
+    PVP.broadcastTimer = setTimeout(broadcastState, 30);
+  }
+
+  function applyGuestState(snapshot) {
+    PVP.active = true;
+    state = createState();
+    state.playerHp = snapshot.guest.hp;
+    state.aiHp = snapshot.host.hp;
+    state.playerHand = snapshot.guest.hand || [];
+    state.aiHand = new Array(snapshot.host.handCount || 0).fill(null);
+    state.playerField = snapshot.guest.field || [];
+    state.aiField = snapshot.host.field || [];
+    state.playerDeck = new Array(snapshot.guest.deckCount || 0).fill(null);
+    state.aiDeck = new Array(snapshot.host.deckCount || 0).fill(null);
+    state.graveyard = snapshot.grave || [];
+    state.turn = snapshot.turn === "ai" ? "player" : "ai";
+    state.phase = snapshot.gameOver ? "over" : state.turn === "player" ? "player" : "ai";
+    state.turnNo = snapshot.turnNo || 1;
+    state.gameOver = Boolean(snapshot.gameOver);
+    state.busy = false;
+    state.selectedAttacker = null;
+    state.pendingSummon = null;
+    state.highSummonUsed = Boolean(snapshot.guest.highSummonUsed);
+    state.returnUsed = Boolean(snapshot.guest.returnUsed);
+    state.returnMode = false;
+    state.log = snapshot.log || [];
+    state.result = snapshot.result || null;
+    state.resultReason = snapshot.resultReason || "";
+    state.tip = state.gameOver ? "决斗结束" : state.turn === "player" ? DEFAULT_TIP : "等待房主行动……";
+
+    $("setupPanel").classList.add("hidden");
+    $("duelArea").classList.remove("hidden");
+    $("resultOverlay").classList.add("hidden");
+    if (state.gameOver) {
+      renderAll();
+      showGuestResult(snapshot.result, snapshot.resultReason);
+    } else {
+      renderAll();
+    }
+  }
+
+  function showGuestResult(result, reason) {
+    $("resultTitle").textContent = result === "win" ? "决斗胜利" : result === "lose" ? "决斗败北" : "时间平局";
+    $("resultIcon").textContent = result === "win" ? "✦" : result === "lose" ? "✧" : "∞";
+    $("resultDesc").textContent = reason || "";
+    $("rematchBtn").classList.add("hidden");
+    $("editDeckBtn").textContent = "关闭";
+    $("resultOverlay").classList.remove("hidden");
+  }
+
+  function handleServerEvent(event) {
+    if (event.type === "hello") {
+      PVP.role = event.role;
+      if (event.role === "host") {
+        setPvpStatus("房间 " + PVP.code + " 已创建，等待好友加入");
+      } else {
+        setPvpStatus("已加入房间 " + PVP.code + "，等待房主开始");
+      }
+      return;
+    }
+    if (event.type === "guest-joined") {
+      if (PVP.role === "host") {
+        PVP.guestConnected = true;
+        $("guestStatus").textContent = "对手已加入";
+        $("startPvpBtn").disabled = false;
+        setPvpStatus("对手已加入，可以开始决斗");
+      }
+      return;
+    }
+    if (event.type === "guest-left") {
+      if (PVP.role === "host") {
+        PVP.guestConnected = false;
+        $("guestStatus").textContent = "对手已离开";
+        $("startPvpBtn").disabled = true;
+        setPvpStatus("对手已离开，等待重新加入");
+      }
+      return;
+    }
+    if (event.type === "host-left") {
+      if (PVP.role === "guest") {
+        PVP.active = false;
+        setPvpStatus("房主已离开房间");
+        setTip("房主已离开，本局结束。");
+        renderAll();
+      }
+      return;
+    }
+    if (event.type !== "message" || !event.payload) return;
+    if (PVP.role === "host" && event.payload.type === "action") {
+      handleGuestAction(event.payload.action);
+    } else if (PVP.role === "guest" && event.payload.type === "state") {
+      applyGuestState(event.payload.state);
+    } else if (event.payload.type === "notice" && PVP.role === "guest") {
+      setPvpStatus(event.payload.text || "");
+      setTip(event.payload.text || "");
+      renderAll();
+    } else if (event.payload.type === "closed" && PVP.role === "guest") {
+      PVP.active = false;
+      state.gameOver = true;
+      state.phase = "over";
+      state.tip = event.payload.text || "房主已结束本局";
+      renderAll();
+    }
+  }
+
+  function openEvents() {
+    if (PVP.source) PVP.source.close();
+    const source = new EventSource(
+      `/api/events?code=${encodeURIComponent(PVP.code)}&token=${encodeURIComponent(PVP.token)}`
+    );
+    PVP.source = source;
+    source.onmessage = (event) => {
+      try {
+        handleServerEvent(JSON.parse(event.data));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    source.onerror = () => {
+      setPvpStatus("连接中断，正在尝试重连……");
+    };
+  }
+
+  async function createRoom() {
+    if (totalDeckCount() !== DECK_SIZE) {
+      setPvpStatus("卡组必须是 100 张才能创建房间");
+      return;
+    }
+    try {
+      const data = await postJson("/api/create", {});
+      PVP.role = "host";
+      PVP.code = data.code;
+      PVP.token = data.token;
+      PVP.guestConnected = false;
+      $("pvpRoleBadge").textContent = "房主";
+      $("pvpRoleBadge").classList.remove("hidden");
+      $("pvpLanding").classList.add("hidden");
+      $("pvpHostBox").classList.remove("hidden");
+      $("pvpGuestBox").classList.add("hidden");
+      $("roomCode").textContent = data.code;
+      $("guestStatus").textContent = "等待对手加入…";
+      $("startPvpBtn").disabled = true;
+      $("createRoomBtn").disabled = true;
+      setPvpStatus("房间已创建，把房间号或手机加入链接发给好友");
+      await refreshJoinUrl();
+      openEvents();
+    } catch (error) {
+      setPvpStatus("创建失败：" + pvpErrorText(error));
+    }
+  }
+
+  async function makeJoinUrl() {
+    if (location.protocol === "file:") return "";
+    let host = location.hostname;
+    if (host === "127.0.0.1" || host === "localhost") {
+      try {
+        const data = await fetch("/api/network").then((res) => res.json());
+        if (data.publicUrl) {
+          return data.publicUrl.replace(/\/$/, "") + "/pvp.html?room=" + encodeURIComponent(PVP.code);
+        }
+        if (data.ips && data.ips.length) host = data.ips[0];
+      } catch (error) {
+        // Keep localhost if the network endpoint is unavailable.
+      }
+    }
+    const url = new URL("/pvp.html", location.href);
+    url.hostname = host;
+    if (location.port) url.port = location.port;
+    url.searchParams.set("room", PVP.code);
+    return url.toString();
+  }
+
+  async function refreshJoinUrl() {
+    const target = $("joinUrl");
+    if (!target) return;
+    const url = await makeJoinUrl();
+    target.value = url || "请用 http://127.0.0.1:8787/pvp.html 打开";
+  }
+
+  async function joinRoom() {
+    const code = $("roomCodeInput").value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setPvpStatus("请输入 6 位数字房间号");
+      return;
+    }
+    try {
+      const data = await postJson("/api/join", { code });
+      PVP.role = "guest";
+      PVP.code = data.code;
+      PVP.token = data.token;
+      $("pvpRoleBadge").textContent = "玩家2";
+      $("pvpRoleBadge").classList.remove("hidden");
+      $("pvpLanding").classList.add("hidden");
+      $("pvpHostBox").classList.add("hidden");
+      $("pvpGuestBox").classList.remove("hidden");
+      $("setupPanel").classList.add("guest-mode");
+      $("restartBtn").classList.add("hidden");
+      $("guestStatusText").textContent = "已加入房间 " + data.code + "，等待房主开始…";
+      setPvpStatus("已加入房间 " + data.code + "，等待房主开始");
+      openEvents();
+    } catch (error) {
+      setPvpStatus("加入失败：" + pvpErrorText(error));
+    }
+  }
+
+  function startPvpFromLobby() {
+    if (PVP.role !== "host") return;
+    if (!PVP.guestConnected) {
+      setPvpStatus("还没有对手加入");
+      return;
+    }
+    if (totalDeckCount() !== DECK_SIZE) {
+      setPvpStatus("卡组必须是 100 张");
+      return;
+    }
+    lastDeckCounts = { ...deckCounts };
+    startDuel(deckCounts);
+  }
+
+  function handleGuestAction(action) {
+    if (PVP.role !== "host" || !PVP.active || state.gameOver) return;
+    if (state.turn !== "ai") return;
+    if (!action || typeof action !== "object") return;
+    let acted = false;
+
+    if (action.type === "summon") {
+      const card = state.aiHand.find((item) => item.uid === Number(action.cardUid));
+      if (!card) return;
+      const tributes = (action.tributes || [])
+        .map((uid) => state.aiField.find((item) => item.uid === Number(uid)))
+        .filter(Boolean);
+      acted = summonMonster(card, "ai", tributes);
+    } else if (action.type === "setTrap") {
+      const card = state.aiHand.find((item) => item.uid === Number(action.cardUid));
+      if (card) acted = setTrap(card, "ai");
+    } else if (action.type === "spell") {
+      const card = state.aiHand.find((item) => item.uid === Number(action.cardUid));
+      if (card) acted = activateSpell(card, "ai");
+    } else if (action.type === "attack") {
+      const attacker = state.aiField.find((item) => item.uid === Number(action.attackerUid));
+      if (!attacker) return;
+      performAttack("ai", attacker, action.targetUid === null ? null : Number(action.targetUid));
+      acted = true;
+    } else if (action.type === "toggle") {
+      const card = state.aiField.find((item) => item.uid === Number(action.cardUid));
+      if (card && isMonster(card)) {
+        toggleMonsterMode(card);
+        acted = true;
+      }
+    } else if (action.type === "return") {
+      const card = state.aiField.find((item) => item.uid === Number(action.cardUid));
+      if (card) acted = returnMonster(card, "ai");
+    } else if (action.type === "endTurn") {
+      beginHostTurnFromGuest();
+      return;
+    }
+
+    if (acted && !state.gameOver) {
+      renderAll();
+      broadcastState();
+    } else if (!acted && !state.gameOver) {
+      sendMessage({ type: "notice", text: "操作未通过：目标或条件不满足。" });
+    }
+  }
+
+  $("createRoomBtn").addEventListener("click", createRoom);
+  $("joinRoomBtn").addEventListener("click", joinRoom);
+  $("startPvpBtn").addEventListener("click", startPvpFromLobby);
+  $("roomCodeInput").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") joinRoom();
+  });
+  $("copyRoomBtn").addEventListener("click", async () => {
+    const code = PVP.code || $("roomCode").textContent;
+    try {
+      await navigator.clipboard.writeText(code);
+      setPvpStatus("房间号已复制");
+    } catch (error) {
+      setPvpStatus("复制失败，请手动输入 " + code);
+    }
+  });
+  $("copyJoinUrlBtn").addEventListener("click", async () => {
+    const link = $("joinUrl").value;
+    if (!link || link === "创建房间后生成") return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setPvpStatus("手机加入链接已复制，发给手机即可");
+    } catch (error) {
+      setPvpStatus("复制失败，请长按输入框手动复制");
+    }
+  });
+
+  // ---------- 事件 ----------
+
+  $("deckList").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const row = button.closest(".deck-row");
+    if (!row) return;
+    const id = Number(row.dataset.id);
+    setDeckCount(id, button.dataset.action === "plus" ? 1 : -1);
+  });
+
+  $("recommendDeckBtn").addEventListener("click", () => {
+    deckCounts = makeRecommendedCounts();
+    refreshDeckUI();
+  });
+
+  $("clearDeckBtn").addEventListener("click", () => {
+    deckCounts = Object.fromEntries(CARD_DB.map((card) => [card.id, 0]));
+    refreshDeckUI();
+  });
+
+  $("startDuelBtn").addEventListener("click", startPvpFromLobby);
+
+  $("endTurnBtn").addEventListener("click", endPlayerTurn);
+
+  $("returnMonsterBtn").addEventListener("click", () => {
+    if (!canPlayerAct() || state.pendingSummon) return;
+    if (state.returnMode) {
+      state.returnMode = false;
+      setTip(DEFAULT_TIP);
+      renderAll();
+      return;
+    }
+    if (state.returnUsed) return;
+    if (!state.playerField.some(canReturnMonster)) {
+      setTip("场上没有可以收回的怪兽。");
+      renderAll();
+      return;
+    }
+    state.returnMode = true;
+    state.selectedAttacker = null;
+    setTip("选择一只自己场上的怪兽收回手牌；本回合每方只能收回 1 次。");
+    renderAll();
+  });
+
+  $("cancelSelectBtn").addEventListener("click", () => {
+    if (!canPlayerAct()) return;
+    if (state.returnMode) {
+      state.returnMode = false;
+      setTip(DEFAULT_TIP);
+      renderAll();
+      return;
+    }
+    if (cancelPendingSummon()) return;
+    state.selectedAttacker = null;
+    setTip(DEFAULT_TIP);
+    renderAll();
+  });
+
+  $("directAttackBtn").addEventListener("click", () => {
+    if (!canPlayerAct() || state.pendingSummon || state.selectedAttacker === null) return;
+    if (monstersOf(state.aiField).length > 0) {
+      setTip("对手场上还有怪兽，不能直接攻击玩家。");
+      renderAll();
+      return;
+    }
+    if (PVP.role === "guest") {
+      sendGuestAction({ type: "attack", attackerUid: state.selectedAttacker, targetUid: null });
+      state.selectedAttacker = null;
+      setTip("已发送直接攻击，等待房主结算。");
+      renderAll();
+      return;
+    }
+    const attacker = state.playerField.find((card) => card.uid === state.selectedAttacker);
+    if (attacker) performAttack("player", attacker, null);
+  });
+
+  $("aiLife").addEventListener("click", () => {
+    if (!canPlayerAct() || state.pendingSummon || state.selectedAttacker === null) return;
+    if (monstersOf(state.aiField).length > 0) return;
+    if (PVP.role === "guest") {
+      sendGuestAction({ type: "attack", attackerUid: state.selectedAttacker, targetUid: null });
+      state.selectedAttacker = null;
+      setTip("已发送直接攻击，等待房主结算。");
+      renderAll();
+      return;
+    }
+    const attacker = state.playerField.find((card) => card.uid === state.selectedAttacker);
+    if (attacker) performAttack("player", attacker, null);
+  });
+
+  $("restartBtn").addEventListener("click", returnToSetup);
+  $("rematchBtn").addEventListener("click", rematch);
+  $("editDeckBtn").addEventListener("click", () => {
+    if (PVP.role === "guest") {
+      $("resultOverlay").classList.add("hidden");
+      return;
+    }
+    returnToSetup();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && canPlayerAct()) {
+      if (state.returnMode) {
+        state.returnMode = false;
+        setTip(DEFAULT_TIP);
+        renderAll();
+      } else if (state.pendingSummon) {
+        cancelPendingSummon();
+      } else if (state.selectedAttacker !== null) {
+        state.selectedAttacker = null;
+        setTip(DEFAULT_TIP);
+        renderAll();
+      }
+    }
+  });
+
+  renderDeckBuilder();
+  renderAll();
+  setTip(DEFAULT_TIP);
+  const roomFromUrl = new URLSearchParams(location.search).get("room");
+  if (/^\d{6}$/.test(roomFromUrl || "")) {
+    $("roomCodeInput").value = roomFromUrl;
+    $("setupPanel").classList.add("guest-mode");
+    $("createRoomBtn").classList.add("hidden");
+    $("joinRoomBtn").className = "btn primary";
+    setPvpStatus("房间号 " + roomFromUrl + " 已填入，点“加入房间”");
+  }
+  if (location.protocol === "file:") {
+    setPvpStatus("当前是本地文件模式，无法连接房间服务。请双击“启动好友约战.bat”，或打开 http://127.0.0.1:8787/pvp.html");
+    $("createRoomBtn").disabled = true;
+    $("joinRoomBtn").disabled = true;
+  }
+})();
+</script>
+</body>
+</html>

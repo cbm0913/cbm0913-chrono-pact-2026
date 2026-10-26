@@ -1,0 +1,13 @@
+{
+  "name": "chrono-pact-pvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "时之契 · 好友约战房间服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
